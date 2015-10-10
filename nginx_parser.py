@@ -11,7 +11,7 @@ log_format = \
     '([\d.]+) \- \[(.+)\] "([\d.]+)" "(.+) (.+) .+" (\d{3}) \((\d+)\) "(.+)" "(.+) (.+)" \[([\d.]+)]'
 line_re = re.compile(log_format)
 
-def update_progress(progress):
+def progress_bar(progress):
     sys.stdout.write('\r[{0}] {1}%'.format('#'*(progress), progress))
 
 def analyze_log(logfile, outfile, time):
@@ -25,7 +25,7 @@ def analyze_log(logfile, outfile, time):
         log_line_nu += 1
         if log_line_nu % (lines_count // 100) == 0:
             progress += 1
-            update_progress(progress)
+            progress_bar(progress)
         line_opts = line_re.findall(log_line)
         if line_opts:
 # Get the values from a line
