@@ -108,16 +108,9 @@ def analyze_log(logfile, outfile, time, count, exclude):
         summary_by_status += "{}: {} ".format(k[0], k[1])
     print(summary_by_status)
 
-# Sort the total timing dict
+# Sort and print the total timing report
     if time:
         sorted_time_total = sorted(time_total.items(), key=itemgetter(1), reverse=True)
-
-# Sort the total count dict
-    if count:
-        sorted_count_total = sorted(count_total.items(), key=itemgetter(1), reverse=True)
-
-# Print the total timing report
-    if time:
         print("\n= The report, based on the total call time {}".format("=" * 64))
         print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
               format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
@@ -125,8 +118,9 @@ def analyze_log(logfile, outfile, time, count, exclude):
             print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
                   format(count_total[e[0]], round(e[1], 2), round(e[1] / count_total[e[0]], 2), e[0]))
 
-# Print the count report
+# Sort and print the count report
     if count:
+        sorted_count_total = sorted(count_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total number of queries {}".format("=" * 56))
         print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
               format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
