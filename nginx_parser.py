@@ -136,9 +136,12 @@ def analyze_log(logfile, outfile, time, count, exclude):
 def main():
     parser = ArgumentParser()
     parser.add_argument('logfile', help='Log file for analysis', nargs='*')
-    parser.add_argument('--outfile', '-o', action='store', help='File to output reports (in developing)')
-    parser.add_argument('--time', '-t', action='count', help='Print the report, based on the total call time')
-    parser.add_argument('--count', '-c', action='count', help='Print the report, based on the total number of queries')
+    parser.add_argument('--outfile', '-o', action='store',
+                        help='File to output reports (in developing)')
+    parser.add_argument('--time', '-t', action='count',
+                        help='Print the report, based on the total call time')
+    parser.add_argument('--count', '-c', action='count',
+                        help='Print the report, based on the total number of queries')
     parser.add_argument('--exclude', '-e', action='store', nargs='*',
                         help='The part of URL that are excluded from reporting')
     args = parser.parse_args()
