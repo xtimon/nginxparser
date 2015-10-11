@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import getopt
+from argparse import ArgumentParser
 from operator import itemgetter
-from os import path
 from re import compile
-from sys import argv, exit, stdout
+from sys import stdout
 
 # Using log format:
 # log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
@@ -53,7 +52,12 @@ def analyze_log(logfile, outfile, time, count, exclude):
             args = line_opts[0][9]
             request_time = float(line_opts[0][10])
 
-            if exclude and exclude in request:
+            stop = False
+            if exclude:
+                for e in exclude:
+                    if e in request:
+                        stop = True
+            if stop:
                 continue
 
 # Creation the summary
@@ -112,75 +116,34 @@ def analyze_log(logfile, outfile, time, count, exclude):
     if time:
         sorted_time_total = sorted(time_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total call time {}".format("=" * 64))
-        print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
+        print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
               format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
         for e in sorted_time_total:
-            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
+            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
                   format(count_total[e[0]], round(e[1], 2), round(e[1] / count_total[e[0]], 2), e[0]))
 
 # Sort and print the count report
     if count:
         sorted_count_total = sorted(count_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total number of queries {}".format("=" * 56))
-        print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
+        print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
               format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
         for e in sorted_count_total:
-            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".\
+            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
                   format(e[1], round(time_total[e[0]], 2), round(time_total[e[0]] / e[1], 2), e[0]))
 
 
-def usage():
-    print('''
-Usage: ./nginx_parser.py [OPTION]... -l logfile.log
-Mandatory arguments to long options are mandatory for short options too.
-  -l, --logfile                 Log file for analysis
-  -o, --outfile                 File to output reports (in developing)
-  -t, --time                    Print the report, based on the total call time
-  -c, --count                   Print the report, based on the total number of queries
-  -e, --exclude                 The part of URL that are excluded from reporting
-EXAMPLES:
-  ./nginx_parser.py --count --logfile=/path/to/logfile.log
-  ./nginx_parser.py -ct -e /static/ -l /path/to/logfile.log
-    ''')
-
-
 def main():
-    try:
-        opts, args = \
-            getopt.getopt(argv[1:], "htcl:o:e:", ["help", "time", "count", "logfile=", "outfile=", "exclude="])
-    except getopt.GetoptError as err:
-        print(err)
-        usage()
-        exit(2)
-    time = False
-    count = False
-    exclude = ''
-    logfile = None
-    outfile = None
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            exit()
-        elif o in ("-l", "--logfile"):
-            logfile = a
-        elif o in ("-o", "--output"):
-            outfile = a
-        elif o in ("-t", "--time"):
-            time = True
-        elif o in ("-c", "--count"):
-            count = True
-        elif o in ("-e", "--exclude"):
-            exclude = a
-        else:
-            assert False, "unhandled option"
-    if logfile:
-        if path.isfile(logfile):
-            analyze_log(logfile, outfile, time, count, exclude)
-        else:
-            print("It is not a file: {}".format(logfile))
-            usage()
-    else:
-        usage()
+    parser = ArgumentParser()
+    parser.add_argument('logfile', help='Log file for analysis', nargs='*')
+    parser.add_argument('--outfile', '-o', action='store', help='File to output reports (in developing)')
+    parser.add_argument('--time', '-t', action='count', help='Print the report, based on the total call time')
+    parser.add_argument('--count', '-c', action='count', help='Print the report, based on the total number of queries')
+    parser.add_argument('--exclude', '-e', action='store', nargs='*',
+                        help='The part of URL that are excluded from reporting')
+    args = parser.parse_args()
+    for lf in args.logfile:
+        analyze_log(lf, args.outfile, args.time, args.count, args.exclude)
 
 
 if __name__ == "__main__":
