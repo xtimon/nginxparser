@@ -152,7 +152,8 @@ EXAMPLES:
 
 def main():
     try:
-        opts, args = getopt.getopt(argv[1:], "htcl:o:e:", ["help", "time", "count", "logfile=", "outfile=", "exclude="])
+        opts, args = \
+            getopt.getopt(argv[1:], "htcl:o:e:", ["help", "time", "count", "logfile=", "outfile=", "exclude="])
     except getopt.GetoptError as err:
         print(err)
         usage()
