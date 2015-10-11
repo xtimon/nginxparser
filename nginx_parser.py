@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import getopt, re, operator, sys
+import getopt, operator, os.path, re, sys
 
 # Using log format:
 # log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
@@ -7,8 +7,7 @@ import getopt, re, operator, sys
 #                     '"$uri $args" [$request_time]';
 
 # Creation of a regular expression for the format used
-log_format = \
-    '([\d.]+) \- \[(.+)\] "([\d.]+)" "(.+) (.+) .+" (\d{3}) \((\d+)\) "(.+)" "(.+) (.+)" \[([\d.]+)]'
+log_format = '([\d.]+) \- \[(.+)\] "([\d.]+)" "(.+) (.+) .+" (\d{3}) \((\d+)\) "(.+)" "(.+) (.+)" \[([\d.]+)]'
 line_re = re.compile(log_format)
 
 def progress_bar(progress):
@@ -58,7 +57,7 @@ def analyze_log(logfile, outfile, time):
             if status in summary['by_status'].keys():
                 summary['by_status'][status] += 1
             else: summary['by_status'][status] = 1
-# Sort dicts
+# Sort the summary dicts
     sorted_summary_by_types = sorted(summary['by_types'].items(), key=operator.itemgetter(1), reverse=True)
     sorted_summary_by_time = sorted(summary['by_time'].items(), key=operator.itemgetter(1), reverse=True)
     sorted_summary_by_status = sorted(summary['by_status'].items(), key=operator.itemgetter(1), reverse=True)
@@ -104,10 +103,13 @@ def main():
         else:
             assert False, "unhandled option"
     if logfile:
-        analyze_log(logfile, outfile, time)
+        if os.path.isfile(logfile):
+            analyze_log(logfile, outfile, time)
+        else:
+            print("It is not a file: {}".format(logfile))
+            usage()
     else:
         usage()
-        sys.exit()
 
 if __name__ == "__main__":
     main()
