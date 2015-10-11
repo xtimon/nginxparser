@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 from operator import itemgetter
+from os import path
 from re import compile
 from sys import stdout
 
@@ -135,7 +136,8 @@ def analyze_log(logfile, outfile, time, count, exclude):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('logfile', help='Log file for analysis', nargs='*')
+    parser.add_argument('--logfile', '-l', action='store',
+                        help='Log file for analysis', required=True)
     parser.add_argument('--outfile', '-o', action='store',
                         help='File to output reports (in developing)')
     parser.add_argument('--time', '-t', action='count',
@@ -145,8 +147,10 @@ def main():
     parser.add_argument('--exclude', '-e', action='store', nargs='*',
                         help='The part of URL that are excluded from reporting')
     args = parser.parse_args()
-    for lf in args.logfile:
-        analyze_log(lf, args.outfile, args.time, args.count, args.exclude)
+    if path.isfile(args.logfile):
+        analyze_log(args.logfile, args.outfile, args.time, args.count, args.exclude)
+    else:
+        print("This is not a file: {}".format(args.logfile))
 
 
 if __name__ == "__main__":
