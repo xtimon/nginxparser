@@ -12,7 +12,8 @@ log_format = \
 line_re = re.compile(log_format)
 
 def progress_bar(progress):
-    sys.stdout.write('\r[{0}] {1}%'.format('#'*(progress), progress))
+    sys.stdout.write('\r[{}{}] {}%'.format('#'*(progress), ' '*(100-progress), progress))
+    sys.stdout.flush()
 
 def analyze_log(logfile, outfile, time):
     summary = {'by_types': {'Overall': 0},
@@ -23,9 +24,10 @@ def analyze_log(logfile, outfile, time):
     lines_count = sum(1 for l in open(logfile))
     for log_line in open(logfile, 'r'):
         log_line_nu += 1
-        if log_line_nu % (lines_count // 100) == 0:
-            progress += 1
-            progress_bar(progress)
+        if lines_count >= 100000:
+            if log_line_nu % (lines_count // 100) == 0:
+                progress += 1
+                progress_bar(progress)
         line_opts = line_re.findall(log_line)
         if line_opts:
 # Get the values from a line
@@ -40,7 +42,7 @@ def analyze_log(logfile, outfile, time):
             uri = line_opts[0][8]
             args = line_opts[0][9]
             request_time = float(line_opts[0][10])
-# Creation summary
+# Creation the summary
 # By types
             summary['by_types']['Overall'] += 1
             if request_type in summary['by_types'].keys():
