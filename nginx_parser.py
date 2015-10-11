@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import getopt, re, sys
+import getopt, re, operator, sys
 
 # Using log format:
 # log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
@@ -12,7 +12,7 @@ log_format = \
 line_re = re.compile(log_format)
 
 def progress_bar(progress):
-    sys.stdout.write('\r[{}{}] {}%'.format('#'*(progress), ' '*(100-progress), progress))
+    sys.stdout.write('\r[{}{}] {}%'.format('#'*(progress), ' ' * (100-progress), progress))
     sys.stdout.flush()
 
 def analyze_log(logfile, outfile, time):
@@ -58,7 +58,25 @@ def analyze_log(logfile, outfile, time):
             if status in summary['by_status'].keys():
                 summary['by_status'][status] += 1
             else: summary['by_status'][status] = 1
-    print(summary)
+# Sort dicts
+    sorted_summary_by_types = sorted(summary['by_types'].items(), key=operator.itemgetter(1), reverse=True)
+    sorted_summary_by_time = sorted(summary['by_time'].items(), key=operator.itemgetter(1), reverse=True)
+    sorted_summary_by_status = sorted(summary['by_status'].items(), key=operator.itemgetter(1), reverse=True)
+# Print the summary
+    print("\n= Summary {}".format("=" * 97))
+    summary_by_types = '| Request types\t\t: '
+    for k in sorted_summary_by_types:
+        summary_by_types += "{} {}\t".format(k[0], k[1])
+    print(summary_by_types)
+    summary_by_time = '| Request timing\t: '
+    for k in sorted_summary_by_time:
+        summary_by_time += "{} {}\t".format(k[0], round(k[1],2))
+    print(summary_by_time)
+    summary_by_status = '| Request statuses\t: '
+    for k in sorted_summary_by_types:
+        summary_by_status += "{} {}\t".format(k[0], k[1])
+    print(summary_by_status)
+
 
 def usage():
     print("Usage info")
