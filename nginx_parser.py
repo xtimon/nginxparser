@@ -20,12 +20,13 @@ def analyze_log(logfile, outfile, time):
                'by_time': {'Overall': 0},
                'by_status':{}}
     log_line_nu = 0
-    progress = 0
     lines_count = sum(1 for l in open(logfile))
+    progress = 0
+    percent = lines_count // 100
     for log_line in open(logfile, 'r'):
         log_line_nu += 1
         if lines_count >= 100000:
-            if log_line_nu % (lines_count // 100) == 0:
+            if log_line_nu % percent == 0:
                 progress += 1
                 progress_bar(progress)
         line_opts = line_re.findall(log_line)
