@@ -66,15 +66,15 @@ def analyze_log(logfile, outfile, time):
     print("\n= Summary {}".format("=" * 97))
     summary_by_types = '| Request types\t\t: '
     for k in sorted_summary_by_types:
-        summary_by_types += "{} {}\t".format(k[0], k[1])
+        summary_by_types += "{}: {} ".format(k[0], k[1])
     print(summary_by_types)
     summary_by_time = '| Request timing\t: '
     for k in sorted_summary_by_time:
-        summary_by_time += "{} {}\t".format(k[0], round(k[1],2))
+        summary_by_time += "{}: {} ".format(k[0], round(k[1],2))
     print(summary_by_time)
     summary_by_status = '| Request statuses\t: '
-    for k in sorted_summary_by_types:
-        summary_by_status += "{} {}\t".format(k[0], k[1])
+    for k in sorted_summary_by_status:
+        summary_by_status += "{}: {} ".format(k[0], k[1])
     print(summary_by_status)
 
 
