@@ -106,7 +106,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status):
 
     # Redirect out to the file
     if outfile:
-        print('\n')
+        print('\nReports are stored in this file: {}'.format(outfile))
         sys.stdout = open(outfile, 'w')
 
     # Sort the summary dicts
