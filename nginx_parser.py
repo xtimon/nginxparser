@@ -17,17 +17,17 @@ line_re = compile(log_format)
 
 def progress_bar(progress):
 
-    #The density of the progress bar
+    # The density of the progress bar
     density = 2
 
-    #Getting the size of the console
+    # Getting the size of the console
     rows, columns = popen('stty size', 'r').read().split()
     if int(columns):
-        density = int(round(120 / int(columns)+ 0.5))
+        density = int(round(120 / int(columns) + 0.5))
         if density == 0:
             density = 1
-    sys.stdout.write('\r[{}{}] {}%'.format('#' * (progress // density),
-                                       ' ' * (100 // density - progress // density), progress))
+    sys.stdout.write('\r[{}{}] {}%'.
+                     format('#' * (progress // density), ' ' * (100 // density - progress // density), progress))
     sys.stdout.flush()
 
 
@@ -56,16 +56,16 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
         if line_opts:
 
             # Get the values from a line
-            remote_addr = line_opts[0][0]
-            time_local =line_opts[0][1]
-            host = line_opts[0][2]
+            # remote_addr = line_opts[0][0]
+            # time_local =line_opts[0][1]
+            # host = line_opts[0][2]
             request_type = line_opts[0][3]
             request = line_opts[0][4]
             status = line_opts[0][5]
-            bytes_sent = line_opts[0][6]
-            http_refferer = line_opts[0][7]
-            uri = line_opts[0][8]
-            args = line_opts[0][9]
+            # bytes_sent = line_opts[0][6]
+            # http_refferer = line_opts[0][7]
+            # uri = line_opts[0][8]
+            # args = line_opts[0][9]
             request_time = float(line_opts[0][10])
 
             stop = False
@@ -118,7 +118,6 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
                         else:
                             status_rep_dict[s][request] = 1
 
-
     # Redirect out to the file
     if outfile:
         print('\nReports are stored in this file: {}'.format(outfile))
@@ -170,7 +169,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
         print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
         print("|{0:>17} | {1:<}".format("Count", "URL pattern"))
         for e in sorted_status_rep:
-            print("|{0:>17} | {1:<}".format(e[1],e[0]))
+            print("|{0:>17} | {1:<}".format(e[1], e[0]))
 
 
 def main():
