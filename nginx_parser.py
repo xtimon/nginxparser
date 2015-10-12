@@ -31,17 +31,21 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep):
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
     if time or count:
         time_total = {}
         count_total = {}
-    log_line_nu = 0
+    if status_rep:
+        status_rep_dict = {}
+        for s in status_rep:
+            status_rep_dict[s] = {}
     lines_count = sum(1 for l in open(logfile))
-    progress = 0
     percent = lines_count // 100
+    progress = 0
+    log_line_nu = 0
     for log_line in open(logfile, 'r'):
         log_line_nu += 1
         if lines_count >= 100000:
@@ -69,6 +73,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status):
                 for e in exclude:
                     if e in request:
                         stop = True
+                        break
             if stop:
                 continue
 
@@ -103,6 +108,16 @@ def analyze_log(logfile, outfile, time, count, exclude, status):
                     count_total[request] += 1
                 else:
                     count_total[request] = 1
+
+            # Creation the report, based on the request status
+            if status_rep:
+                for s in status_rep:
+                    if s == status:
+                        if request in status_rep_dict[s].keys():
+                            status_rep_dict[s][request] += 1
+                        else:
+                            status_rep_dict[s][request] = 1
+
 
     # Redirect out to the file
     if outfile:
@@ -149,6 +164,14 @@ def analyze_log(logfile, outfile, time, count, exclude, status):
             print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
                   format(e[1], round(time_total[e[0]], 2), round(time_total[e[0]] / e[1], 2), e[0]))
 
+    # Sort and print the reports, based on the request status
+    for s in status_rep:
+        sorted_status_rep = sorted(status_rep_dict[s].items(), key=itemgetter(1), reverse=True)
+        print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
+        print("|{0:>17} | {1:<}".format("Count", "URL pattern"))
+        for e in sorted_status_rep:
+            print("|{0:>17} | {1:<}".format(e[1],e[0]))
+
 
 def main():
     parser = ArgumentParser()
@@ -162,7 +185,7 @@ def main():
                         help='Print the report, based on the total number of queries')
     parser.add_argument('--exclude', '-e', action='store', nargs='*',
                         help='The part of URL that are excluded from reporting')
-    parser.add_argument('--status', '-s', action='store',
+    parser.add_argument('--status', '-s', action='store', nargs='*',
                         help='Print the report, based on the request status')
     args = parser.parse_args()
     if path.isfile(args.logfile):
