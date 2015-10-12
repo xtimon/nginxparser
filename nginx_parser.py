@@ -178,8 +178,8 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
                   format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
             for e in sorted_status_rep:
                 print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
-                      format(e[1], round(status_rep_time_dict[s][e[0]]),
-                             round(status_rep_time_dict[s][e[0]] / e[1]), e[0]))
+                      format(e[1], round(status_rep_time_dict[s][e[0]], 2),
+                             round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
 
 
 def main():
