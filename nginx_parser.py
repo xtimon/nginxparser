@@ -39,9 +39,11 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
         time_total = {}
         count_total = {}
     if status_rep:
-        status_rep_dict = {}
+        status_rep_count_dict = {}
+        status_rep_time_dict = {}
         for s in status_rep:
-            status_rep_dict[s] = {}
+            status_rep_count_dict[s] = {}
+            status_rep_time_dict[s] = {}
     lines_count = sum(1 for l in open(logfile))
     percent = lines_count // 100
     progress = 0
@@ -113,10 +115,14 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
             if status_rep:
                 for s in status_rep:
                     if s == status:
-                        if request in status_rep_dict[s].keys():
-                            status_rep_dict[s][request] += 1
+                        if request in status_rep_count_dict[s].keys():
+                            status_rep_count_dict[s][request] += 1
                         else:
-                            status_rep_dict[s][request] = 1
+                            status_rep_count_dict[s][request] = 1
+                        if request in status_rep_time_dict[s].keys():
+                            status_rep_time_dict[s][request] += request_time
+                        else:
+                            status_rep_time_dict[s][request] = request_time
 
     # Redirect out to the file
     if outfile:
@@ -166,11 +172,14 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
     # Sort and print the reports, based on the request status
     if status_rep:
         for s in status_rep:
-            sorted_status_rep = sorted(status_rep_dict[s].items(), key=itemgetter(1), reverse=True)
+            sorted_status_rep = sorted(status_rep_count_dict[s].items(), key=itemgetter(1), reverse=True)
             print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
-            print("|{0:>17} | {1:<}".format("Count", "URL pattern"))
+            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+                  format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
             for e in sorted_status_rep:
-                print("|{0:>17} | {1:<}".format(e[1], e[0]))
+                print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+                      format(e[1], round(status_rep_time_dict[s][e[0]]),
+                             round(status_rep_time_dict[s][e[0]] / e[1]), e[0]))
 
 
 def main():
