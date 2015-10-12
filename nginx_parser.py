@@ -164,12 +164,13 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
                   format(e[1], round(time_total[e[0]], 2), round(time_total[e[0]] / e[1], 2), e[0]))
 
     # Sort and print the reports, based on the request status
-    for s in status_rep:
-        sorted_status_rep = sorted(status_rep_dict[s].items(), key=itemgetter(1), reverse=True)
-        print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
-        print("|{0:>17} | {1:<}".format("Count", "URL pattern"))
-        for e in sorted_status_rep:
-            print("|{0:>17} | {1:<}".format(e[1], e[0]))
+    if status_rep:
+        for s in status_rep:
+            sorted_status_rep = sorted(status_rep_dict[s].items(), key=itemgetter(1), reverse=True)
+            print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
+            print("|{0:>17} | {1:<}".format("Count", "URL pattern"))
+            for e in sorted_status_rep:
+                print("|{0:>17} | {1:<}".format(e[1], e[0]))
 
 
 def main():
