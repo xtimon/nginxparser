@@ -11,7 +11,7 @@ from re import compile
 #                     '"$uri $args" [$request_time]';
 
 # Creation of a regular expression for the format used
-log_format = '([\d.]+) \- \[(.+)\] "(.+)" "(.+) (.+) .+" (\d{3}) \((\d+)\) "(.+)" "(.+) (.+)" \[([\d.]+)]'
+log_format = '([\d.]+) \- \[(.+)\] "(.+)" "([A-Z]+) (.+) .+" (\d{3}) \((\d+)\) "(.+)" "(.+) (.+)" \[([\d.]+)]'
 line_re = compile(log_format)
 
 
