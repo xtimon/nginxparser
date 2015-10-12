@@ -16,7 +16,11 @@ line_re = compile(log_format)
 
 
 def progress_bar(progress):
-    stdout.write('\r[{}{}] {}%'.format('#' * progress, ' ' * (100-progress), progress))
+
+    # The density of the progress bar
+    density = 2
+    stdout.write('\r[{}{}] {}%'.format('#' * (progress // density),
+                                       ' ' * (100 // density - progress // density), progress))
     stdout.flush()
 
 
@@ -40,7 +44,7 @@ def analyze_log(logfile, outfile, time, count, exclude):
         line_opts = line_re.findall(log_line)
         if line_opts:
 
-# Get the values from a line
+            # Get the values from a line
             remote_addr = line_opts[0][0]
             time_local =line_opts[0][1]
             host = line_opts[0][2]
@@ -61,28 +65,28 @@ def analyze_log(logfile, outfile, time, count, exclude):
             if stop:
                 continue
 
-# Creation the summary
-# By types
+            # Creation the summary
+            # By types
             summary['by_types']['Overall'] += 1
             if request_type in summary['by_types'].keys():
                 summary['by_types'][request_type] += 1
             else:
                 summary['by_types'][request_type] = 1
 
-# By time
+            # By time
             summary['by_time']['Overall'] += request_time
             if request_type in summary['by_time'].keys():
                 summary['by_time'][request_type] += request_time
             else:
                 summary['by_time'][request_type] = request_time
 
-# By status
+            # By status
             if status in summary['by_status'].keys():
                 summary['by_status'][status] += 1
             else:
                 summary['by_status'][status] = 1
 
-# Creation the total timing and the count report
+            # Creation the total timing and the count report
             if time or count:
                 if request in time_total.keys():
                     time_total[request] += request_time
@@ -93,12 +97,12 @@ def analyze_log(logfile, outfile, time, count, exclude):
                 else:
                     count_total[request] = 1
 
-# Sort the summary dicts
+    # Sort the summary dicts
     sorted_summary_by_types = sorted(summary['by_types'].items(), key=itemgetter(1), reverse=True)
     sorted_summary_by_time = sorted(summary['by_time'].items(), key=itemgetter(1), reverse=True)
     sorted_summary_by_status = sorted(summary['by_status'].items(), key=itemgetter(1), reverse=True)
 
-# Print the summary
+    # Print the summary
     print("\n= Summary {}".format("=" * 97))
     summary_by_types = '| Request types\t\t: '
     for k in sorted_summary_by_types:
@@ -113,7 +117,7 @@ def analyze_log(logfile, outfile, time, count, exclude):
         summary_by_status += "{}: {} ".format(k[0], k[1])
     print(summary_by_status)
 
-# Sort and print the total timing report
+    # Sort and print the total timing report
     if time:
         sorted_time_total = sorted(time_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total call time {}".format("=" * 64))
@@ -123,7 +127,7 @@ def analyze_log(logfile, outfile, time, count, exclude):
             print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
                   format(count_total[e[0]], round(e[1], 2), round(e[1] / count_total[e[0]], 2), e[0]))
 
-# Sort and print the count report
+    # Sort and print the count report
     if count:
         sorted_count_total = sorted(count_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total number of queries {}".format("=" * 56))
