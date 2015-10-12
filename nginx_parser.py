@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
 from operator import itemgetter
-from os import path
+from os import path, popen
 from re import compile
 from sys import stdout
 
@@ -17,8 +17,15 @@ line_re = compile(log_format)
 
 def progress_bar(progress):
 
-    # The density of the progress bar
+    #The density of the progress bar
     density = 2
+
+    #Getting the size of the console
+    rows, columns = popen('stty size', 'r').read().split()
+    if int(columns):
+        density = int(round(120 / int(columns)+ 0.5))
+        if density == 0:
+            density = 1
     stdout.write('\r[{}{}] {}%'.format('#' * (progress // density),
                                        ' ' * (100 // density - progress // density), progress))
     stdout.flush()
