@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import sys
 from argparse import ArgumentParser
 from operator import itemgetter
 from os import path, popen
 from re import compile
-from sys import stdout
 
 # Using log format:
 # log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
@@ -26,12 +26,12 @@ def progress_bar(progress):
         density = int(round(120 / int(columns)+ 0.5))
         if density == 0:
             density = 1
-    stdout.write('\r[{}{}] {}%'.format('#' * (progress // density),
+    sys.stdout.write('\r[{}{}] {}%'.format('#' * (progress // density),
                                        ' ' * (100 // density - progress // density), progress))
-    stdout.flush()
+    sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude):
+def analyze_log(logfile, outfile, time, count, exclude, status):
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
@@ -104,6 +104,11 @@ def analyze_log(logfile, outfile, time, count, exclude):
                 else:
                     count_total[request] = 1
 
+    # Redirect out to the file
+    if outfile:
+        print('\n')
+        sys.stdout = open(outfile, 'w')
+
     # Sort the summary dicts
     sorted_summary_by_types = sorted(summary['by_types'].items(), key=itemgetter(1), reverse=True)
     sorted_summary_by_time = sorted(summary['by_time'].items(), key=itemgetter(1), reverse=True)
@@ -150,16 +155,18 @@ def main():
     parser.add_argument('--logfile', '-l', action='store',
                         help='Log file for analysis', required=True)
     parser.add_argument('--outfile', '-o', action='store',
-                        help='File to output reports (in developing)')
+                        help='File to save the output reports')
     parser.add_argument('--time', '-t', action='count',
                         help='Print the report, based on the total call time')
     parser.add_argument('--count', '-c', action='count',
                         help='Print the report, based on the total number of queries')
     parser.add_argument('--exclude', '-e', action='store', nargs='*',
                         help='The part of URL that are excluded from reporting')
+    parser.add_argument('--status', '-s', action='store',
+                        help='Print the report, based on the request status')
     args = parser.parse_args()
     if path.isfile(args.logfile):
-        analyze_log(args.logfile, args.outfile, args.time, args.count, args.exclude)
+        analyze_log(args.logfile, args.outfile, args.time, args.count, args.exclude, args.status)
     else:
         print("This is not a file: {}".format(args.logfile))
 
