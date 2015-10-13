@@ -1,4 +1,5 @@
 # nginx_parser
+It works on python2.7 and python 3.*
 
 usage: 
 
