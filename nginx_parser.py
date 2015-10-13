@@ -185,8 +185,9 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug):
                              round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
     if debug:
         print("\nUnparsed rows number: {}".format(len(debug_rows)))
-        print("= Unparsed line numbers {}".format("=" * 83))
-        print(',\t'.join(str(e) for e in debug_rows))
+        if len(debug_rows):
+            print("= Unparsed line numbers {}".format("=" * 83))
+            print('\t'.join(str(e) for e in debug_rows))
 
 
 def main():
