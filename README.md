@@ -18,6 +18,8 @@ optional arguments:
                             The part of URL that are excluded from reporting
       --status [STATUS [STATUS ...]], -s [STATUS [STATUS ...]]
                             Print the report, based on the request status
+      --debug, -d           Displays the count of unparsed lines and the unparsed
+                            line numbers
               
    examples:
 
