@@ -31,19 +31,20 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug):
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
-    if time or count:
-        time_total = {}
-        count_total = {}
+    time_total = {}
+    count_total = {}
     if status_rep:
-        status_rep_count_dict = {}
         status_rep_time_dict = {}
+        status_rep_count_dict = {}
         for s in status_rep:
             status_rep_count_dict[s] = {}
             status_rep_time_dict[s] = {}
+    if debug:
+        debug_rows = []
     lines_count = sum(1 for l in open(logfile))
     percent = lines_count // 100
     progress = 0
@@ -123,6 +124,8 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
                             status_rep_time_dict[s][request] += request_time
                         else:
                             status_rep_time_dict[s][request] = request_time
+        elif debug:
+            debug_rows.append(log_line_nu)
 
     # Redirect out to the file
     if outfile:
@@ -180,6 +183,10 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep):
                 print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
                       format(e[1], round(status_rep_time_dict[s][e[0]], 2),
                              round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
+    if debug:
+        print("\nUnparsed rows number: {}".format(len(debug_rows)))
+        print("= Unparsed line numbers {}".format("=" * 83))
+        print(',\t'.join(str(e) for e in debug_rows))
 
 
 def main():
@@ -196,9 +203,11 @@ def main():
                         help='The part of URL that are excluded from reporting')
     parser.add_argument('--status', '-s', action='store', nargs='*',
                         help='Print the report, based on the request status')
+    parser.add_argument('--debug', '-d', action='count',
+                        help='Displays the count of unparsed lines and the unparsed line numbers')
     args = parser.parse_args()
     if path.isfile(args.logfile):
-        analyze_log(args.logfile, args.outfile, args.time, args.count, args.exclude, args.status)
+        analyze_log(args.logfile, args.outfile, args.time, args.count, args.exclude, args.status, args.debug)
     else:
         print("This is not a file: {}".format(args.logfile))
 
