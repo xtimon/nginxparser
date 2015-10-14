@@ -166,20 +166,20 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     if time:
         sorted_time_total = sorted(time_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total call time {}".format("=" * 64))
-        print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+        print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
               format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
         for e in sorted_time_total:
-            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+            print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
                   format(count_total[e[0]], round(e[1], 2), round(e[1] / count_total[e[0]], 2), e[0]))
 
     # Sort and print the count report
     if count:
         sorted_count_total = sorted(count_total.items(), key=itemgetter(1), reverse=True)
         print("\n= The report, based on the total number of queries {}".format("=" * 56))
-        print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+        print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
               format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
         for e in sorted_count_total:
-            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+            print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
                   format(e[1], round(time_total[e[0]], 2), round(time_total[e[0]] / e[1], 2), e[0]))
 
     # Sort and print the median report
@@ -196,19 +196,19 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                                           median_urls[request][int(len(median_urls[request]) / 2)]) / 2, 3)
         sorted_median_report = sorted(median_report.items(), key=itemgetter(1), reverse=True)
         print("= The report based on a median duration of calls {}".format("=" * 58))
-        print("| {0:>25} | {1:<}".format("Median duration of call", "URL_pattern"))
+        print("| {0:>25} | {1:>17}| {2:<}".format("Median duration of call", "Calls", "URL_pattern"))
         for e in sorted_median_report:
-            print("| {0:>25} | {1:<}".format(e[1], e[0]))
+            print("| {0:>25} | {1:>17}| {2:<}".format(e[1], len(median_urls[e[0]]), e[0]))
 
     # Sort and print the reports, based on the request status
     if status_rep:
         for s in status_rep:
             sorted_status_rep = sorted(status_rep_count_dict[s].items(), key=itemgetter(1), reverse=True)
             print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
-            print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+            print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
                   format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
             for e in sorted_status_rep:
-                print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
+                print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
                       format(e[1], round(status_rep_time_dict[s][e[0]], 2),
                              round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
     if debug:
