@@ -12,8 +12,9 @@ optional arguments:
                             Log file for analysis
       --outfile OUTFILE, -o OUTFILE
                             File to save the output reports
-      --time, -t            Print the report, based on the total call time
-      --count, -c           Print the report, based on the total number of queries
+      --time, -t            Print the report based on the total call time
+      --count, -c           Print the report based on the total number of queries
+      --median, -m          Print the report based on a median duration of calls
       --exclude [EXCLUDE [EXCLUDE ...]], -e [EXCLUDE [EXCLUDE ...]]
                             The part of URL that are excluded from reporting
       --status [STATUS [STATUS ...]], -s [STATUS [STATUS ...]]
