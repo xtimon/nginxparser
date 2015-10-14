@@ -11,8 +11,9 @@ from re import compile
 #                     '"$uri $args" [$request_time]';
 
 # Creation of a regular expression for the format used
-log_format = \
-    '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" (\d{3}) \((\d+)\) "(.+)" "(.+) (.+)" \[([\d.]+)]'
+log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
+             '(\d{3}) \((\d+)\) "(.+)" ' \
+             '"(.+) (.+)" \[([\d.]+)]'
 line_re = compile(log_format)
 
 
@@ -32,7 +33,7 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median):
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
@@ -44,8 +45,8 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug):
         for s in status_rep:
             status_rep_count_dict[s] = {}
             status_rep_time_dict[s] = {}
-    if debug:
-        debug_rows = []
+    debug_rows = []
+    median_urls = {}
     lines_count = sum(1 for l in open(logfile))
     percent = lines_count // 100
     progress = 0
@@ -125,6 +126,14 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug):
                             status_rep_time_dict[s][request] += request_time
                         else:
                             status_rep_time_dict[s][request] = request_time
+
+            # Creation the report based on a median duration of calls
+            if median:
+                if request in median_urls.keys():
+                    median_urls[request].append(request_time)
+                else:
+                    median_urls[request] = []
+
         elif debug:
             debug_rows.append(log_line_nu)
 
@@ -173,6 +182,24 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug):
             print("|{0:>17}|{1:>20}|{2:>17}| {3:<}".
                   format(e[1], round(time_total[e[0]], 2), round(time_total[e[0]] / e[1], 2), e[0]))
 
+    # Sort and print the median report
+    if median:
+        median_report = {}
+        for request in median_urls.keys():
+            median_urls[request].sort()
+            if median_urls[request] == []:
+                median_urls[request].append(0)
+            if len(median_urls[request]) % 2 == 1:
+                median_report[request] = round(median_urls[request][int(len(median_urls[request]) / 2)], 3)
+            else:
+                median_report[request] = round((median_urls[request][int(len(median_urls[request]) / 2) - 1] +
+                                          median_urls[request][int(len(median_urls[request]) / 2)]) / 2, 3)
+        sorted_median_report = sorted(median_report.items(), key=itemgetter(1), reverse=True)
+        print("= The report based on a median duration of calls {}".format("=" * 58))
+        print("| {0:>25} | {1:<}".format("Median duration of call", "URL_pattern"))
+        for e in sorted_median_report:
+            print("| {0:>25} | {1:<}".format(e[1], e[0]))
+
     # Sort and print the reports, based on the request status
     if status_rep:
         for s in status_rep:
@@ -198,18 +225,21 @@ def main():
     parser.add_argument('--outfile', '-o', action='store',
                         help='File to save the output reports')
     parser.add_argument('--time', '-t', action='count',
-                        help='Print the report, based on the total call time')
+                        help='Print the report based on the total call time')
     parser.add_argument('--count', '-c', action='count',
-                        help='Print the report, based on the total number of queries')
+                        help='Print the report based on the total number of queries')
+    parser.add_argument('--median', '-m', action='count',
+                        help='Print the report based on a median duration of calls')
     parser.add_argument('--exclude', '-e', action='store', nargs='*',
                         help='The part of URL that are excluded from reporting')
     parser.add_argument('--status', '-s', action='store', nargs='*',
-                        help='Print the report, based on the request status')
+                        help='Print the report based on the request status')
     parser.add_argument('--debug', '-d', action='count',
                         help='Displays the count of unparsed lines and the unparsed line numbers')
     args = parser.parse_args()
     if path.isfile(args.logfile):
-        analyze_log(args.logfile, args.outfile, args.time, args.count, args.exclude, args.status, args.debug)
+        analyze_log(args.logfile, args.outfile, args.time, args.count,
+                    args.exclude, args.status, args.debug, args.median)
     else:
         print("This is not a file: {}".format(args.logfile))
 
