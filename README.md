@@ -12,11 +12,13 @@ optional arguments:
                             Log file for analysis
       --outfile OUTFILE, -o OUTFILE
                             File to save the output reports
+      --exclude [EXCLUDE [EXCLUDE ...]], -e [EXCLUDE [EXCLUDE ...]]
+                            The part of URL that are excluded from reporting
       --time, -t            Print the report based on the total call time
       --count, -c           Print the report based on the total number of queries
       --median, -m          Print the report based on a median duration of calls
-      --exclude [EXCLUDE [EXCLUDE ...]], -e [EXCLUDE [EXCLUDE ...]]
-                            The part of URL that are excluded from reporting
+      --remote, -r          Print the report based on the number of calls from
+                            remote hosts
       --status [STATUS [STATUS ...]], -s [STATUS [STATUS ...]]
                             Print the report, based on the request status
       --debug, -d           Displays the count of unparsed lines and the unparsed
