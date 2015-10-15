@@ -33,7 +33,7 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote):
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
@@ -47,6 +47,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
             status_rep_time_dict[s] = {}
     debug_rows = []
     median_urls = {}
+    remote_host_report = {}
     lines_count = sum(1 for l in open(logfile))
     percent = lines_count // 100
     progress = 0
@@ -61,7 +62,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
         if line_opts:
 
             # Get the values from a line
-            # remote_addr = line_opts[0][0]
+            remote_addr = line_opts[0][0]
             # time_local =line_opts[0][1]
             # host = line_opts[0][2]
             request_type = line_opts[0][3]
@@ -134,6 +135,13 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 else:
                     median_urls[request] = []
 
+            # Creation the report based on the number of calls from remote hosts
+            if remote:
+                if remote_addr in remote_host_report.keys():
+                    remote_host_report[remote_addr] += 1
+                else:
+                    remote_host_report[remote_addr] = 1
+
         elif debug:
             debug_rows.append(log_line_nu)
 
@@ -195,10 +203,10 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 median_report[request] = round((median_urls[request][int(len(median_urls[request]) / 2) - 1] +
                                           median_urls[request][int(len(median_urls[request]) / 2)]) / 2, 3)
         sorted_median_report = sorted(median_report.items(), key=itemgetter(1), reverse=True)
-        print("= The report based on a median duration of calls {}".format("=" * 58))
-        print("| {0:>25} | {1:>17}| {2:<}".format("Median duration of call", "Calls", "URL_pattern"))
+        print("\n= The report based on a median duration of calls {}".format("=" * 58))
+        print("| {0:>25} | {1:>17} | {2:<}".format("Median duration of call", "Calls", "URL_pattern"))
         for e in sorted_median_report:
-            print("| {0:>25} | {1:>17}| {2:<}".format(e[1], len(median_urls[e[0]]), e[0]))
+            print("| {0:>25} | {1:>17} | {2:<}".format(e[1], len(median_urls[e[0]]), e[0]))
 
     # Sort and print the reports, based on the request status
     if status_rep:
@@ -211,6 +219,16 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
                       format(e[1], round(status_rep_time_dict[s][e[0]], 2),
                              round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
+
+    # Sort and and print the report based on the number of calls from remote hosts
+    if remote:
+        sorted_remote_host_report = sorted(remote_host_report.items(), key=itemgetter(1), reverse=True)
+        print("\n= The report based on the number of calls from remote hosts {}".format("=" * 47))
+        print("| {0:>17} | {1:<}".format("Calls", "Remote host"))
+        for e in sorted_remote_host_report:
+            print("| {0:>17} | {1:<}".format(e[1], e[0]))
+
+    # Displays the count of unparsed lines and the unparsed line numbers
     if debug:
         print("\nUnparsed rows number: {}".format(len(debug_rows)))
         if len(debug_rows):
@@ -224,14 +242,16 @@ def main():
                         help='Log file for analysis', required=True)
     parser.add_argument('--outfile', '-o', action='store',
                         help='File to save the output reports')
+    parser.add_argument('--exclude', '-e', action='store', nargs='*',
+                        help='The part of URL that are excluded from reporting')
     parser.add_argument('--time', '-t', action='count',
                         help='Print the report based on the total call time')
     parser.add_argument('--count', '-c', action='count',
                         help='Print the report based on the total number of queries')
     parser.add_argument('--median', '-m', action='count',
                         help='Print the report based on a median duration of calls')
-    parser.add_argument('--exclude', '-e', action='store', nargs='*',
-                        help='The part of URL that are excluded from reporting')
+    parser.add_argument('--remote', '-r', action='count',
+                        help='Print the report based on the number of calls from remote hosts')
     parser.add_argument('--status', '-s', action='store', nargs='*',
                         help='Print the report based on the request status')
     parser.add_argument('--debug', '-d', action='count',
@@ -239,7 +259,7 @@ def main():
     args = parser.parse_args()
     if path.isfile(args.logfile):
         analyze_log(args.logfile, args.outfile, args.time, args.count,
-                    args.exclude, args.status, args.debug, args.median)
+                    args.exclude, args.status, args.debug, args.median, args.remote)
     else:
         print("This is not a file: {}".format(args.logfile))
 
