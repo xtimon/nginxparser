@@ -3,7 +3,10 @@ It works on python2.7 and python 3.*
 
 usage: 
 
-    nginx_parser.py [-h] --logfile LOGFILE [--outfile OUTFILE] [--time] [--count] [--exclude [EXCLUDE [EXCLUDE ...]]] [--status [STATUS [STATUS ...]]]
+    usage: nginx_parser.py [-h] --logfile LOGFILE [--outfile OUTFILE]
+                           [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
+                           [--median] [--remote] [--status [STATUS [STATUS ...]]]
+                           [--debug]
 
 optional arguments:
 
