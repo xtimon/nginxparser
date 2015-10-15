@@ -10,7 +10,7 @@ usage:
 
 optional arguments:
 
-    -h, --help            show this help message and exit
+      -h, --help            show this help message and exit
       --logfile LOGFILE, -l LOGFILE
                             Log file for analysis
       --outfile OUTFILE, -o OUTFILE
