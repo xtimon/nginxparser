@@ -134,6 +134,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                     median_urls[request].append(request_time)
                 else:
                     median_urls[request] = []
+                    median_urls[request].append(request_time)
 
             # Creation the report based on the number of calls from remote hosts
             if remote:
@@ -195,8 +196,6 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
         median_report = {}
         for request in median_urls.keys():
             median_urls[request].sort()
-            if median_urls[request] == []:
-                median_urls[request].append(0)
             if len(median_urls[request]) % 2 == 1:
                 median_report[request] = round(median_urls[request][int(len(median_urls[request]) / 2)], 3)
             else:
