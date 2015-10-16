@@ -2,6 +2,7 @@
 It works on python2.7 and python 3.*
 
 Using log format:
+
     log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
                         '$status ($bytes_sent) "$http_referer" '
                         '"$uri $args" [$request_time]';
