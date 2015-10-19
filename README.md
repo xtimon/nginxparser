@@ -21,6 +21,10 @@ optional arguments:
                             Log file for analysis
       --outfile OUTFILE, -o OUTFILE
                             File to save the output reports
+      --period PERIOD PERIOD, -p PERIOD PERIOD
+                            Specify the period for which you need to make reports.
+                            Using format: Y.m.d_H:M:S. Example: --period
+                            2015.10.19_00:00:00 2015.10.20_00:00:00
       --exclude [EXCLUDE [EXCLUDE ...]], -e [EXCLUDE [EXCLUDE ...]]
                             The part of URL that are excluded from reporting
       --time, -t            Print the report based on the total call time
@@ -37,4 +41,4 @@ optional arguments:
 
     ./nginx_parser.py -l /path/to/access_nginx.log -t -e /static /exclude
     ./nginx_parser.py -l /path/to/access_nginx.log -s 500 499 -o /path/to/outfile.txt
-    ./nginx_parser.py -l ../nginx_access.log -o ../test_all.txt -e /static /pull -tcmr -s 499 500
+    ./nginx_parser.py -l ../nginx_access.log -o ../test_all.txt -e /static /pull -tcmr -s 499 500 -p 2015.10.06_00:00:00 2015.10.07_00:00:00

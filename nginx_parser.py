@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 from argparse import ArgumentParser
+from datetime import datetime
 from operator import itemgetter
 from os import path, popen
 from re import compile
@@ -33,7 +34,7 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period):
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
@@ -48,6 +49,9 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     debug_rows = []
     median_urls = {}
     remote_host_report = {}
+    if period:
+        startdatetime = datetime.strptime(period[0], "%Y.%m.%d_%H:%M:%S")
+        stopdatetime = datetime.strptime(period[1], "%Y.%m.%d_%H:%M:%S")
     lines_count = sum(1 for l in open(logfile))
     percent = lines_count // 100
     progress = 0
@@ -63,7 +67,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
 
             # Get the values from a line
             remote_addr = line_opts[0][0]
-            # time_local =line_opts[0][1]
+            time_local =line_opts[0][1]
             # host = line_opts[0][2]
             request_type = line_opts[0][3]
             request = line_opts[0][4]
@@ -82,6 +86,11 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                         break
             if stop:
                 continue
+            if period:
+                no_tz_local_time = time_local[:-6]
+                req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M:%S")
+                if req_dt < startdatetime or req_dt > stopdatetime:
+                    continue
 
             # Creation the summary
             # By types
@@ -118,7 +127,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
             # Creation the report, based on the request status
             if status_rep:
                 for s in status_rep:
-                    if s == status:
+                    if str(s) == status:
                         if request in status_rep_count_dict[s].keys():
                             status_rep_count_dict[s][request] += 1
                         else:
@@ -241,6 +250,10 @@ def main():
                         help='Log file for analysis', required=True)
     parser.add_argument('--outfile', '-o', action='store',
                         help='File to save the output reports')
+    parser.add_argument('--period', '-p', action='store', nargs=2,
+                        help='Specify the period for which you need to make reports. '
+                             'Using format: Y.m.d_H:M:S. '
+                             'Example: --period 2015.10.19_00:00:00 2015.10.20_00:00:00')
     parser.add_argument('--exclude', '-e', action='store', nargs='*',
                         help='The part of URL that are excluded from reporting')
     parser.add_argument('--time', '-t', action='count',
@@ -251,14 +264,15 @@ def main():
                         help='Print the report based on a median duration of calls')
     parser.add_argument('--remote', '-r', action='count',
                         help='Print the report based on the number of calls from remote hosts')
-    parser.add_argument('--status', '-s', action='store', nargs='*',
+    parser.add_argument('--status', '-s', action='store', nargs='*', type=int,
                         help='Print the report based on the request status')
     parser.add_argument('--debug', '-d', action='count',
                         help='Displays the count of unparsed lines and the unparsed line numbers')
     args = parser.parse_args()
     if path.isfile(args.logfile):
         analyze_log(args.logfile, args.outfile, args.time, args.count,
-                    args.exclude, args.status, args.debug, args.median, args.remote)
+                    args.exclude, args.status, args.debug, args.median,
+                    args.remote, args.period)
     else:
         print("This is not a file: {}".format(args.logfile))
 
