@@ -2,7 +2,8 @@
 It works on python2.7 and python 3.*
 
 Installation:
-pip install nginxparser
+
+    pip install nginxparser
 
 Using log format:
 
