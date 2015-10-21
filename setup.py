@@ -12,7 +12,7 @@ setup(
     name=NAME,
     version=VERSION,
     description=DESCRIPTION,
-    long_description=open("README.md").read(),
+    long_description=open("README.rst").read(),
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     license="GPL",
