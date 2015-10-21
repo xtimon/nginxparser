@@ -13,10 +13,10 @@ Using log format:
 
 usage: 
 
-    usage: nginx_parser.py [-h] --logfile LOGFILE [--outfile OUTFILE]
-                           [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
-                           [--median] [--remote] [--status [STATUS [STATUS ...]]]
-                           [--debug]
+    usage: nginxparser [-h] --logfile LOGFILE [--outfile OUTFILE]
+                       [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
+                       [--median] [--remote] [--status [STATUS [STATUS ...]]]
+                       [--debug]
 
 optional arguments:
 
@@ -41,7 +41,7 @@ optional arguments:
       --debug, -d           Displays the count of unparsed lines and the unparsed
                             line numbers
               
-   examples:
+examples:
 
     ./nginx_parser.py -l /path/to/access_nginx.log -t -e /static /exclude
     ./nginx_parser.py -l /path/to/access_nginx.log -s 500 499 -o /path/to/outfile.txt
