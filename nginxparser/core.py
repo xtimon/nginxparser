@@ -1,21 +1,11 @@
 #!/usr/bin/env python
 import sys
+from . import __version__
 from argparse import ArgumentParser
 from datetime import datetime
 from operator import itemgetter
 from os import path, popen
 from re import compile
-
-# Using log format:
-# log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
-#                     '$status ($bytes_sent) "$http_referer" '
-#                     '"$uri $args" [$request_time]';
-
-# Creation of a regular expression for the format used
-log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
-             '(\d{3}) \((\d+)\) "(.+)" ' \
-             '"(.+) (.+)" \[([\d.]+)]'
-line_re = compile(log_format)
 
 
 def progress_bar(progress):
@@ -35,6 +25,12 @@ def progress_bar(progress):
 
 
 def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period):
+
+    # Creation of a regular expression for the format used
+    log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
+                 '(\d{3}) \((\d+)\) "(.+)" ' \
+                 '"(.+) (.+)" \[([\d.]+)]'
+    line_re = compile(log_format)
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
                'by_status': {}}
@@ -245,7 +241,12 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
 
 
 def main():
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description='using log format: \'$remote_addr - [$time_local] "$host" "$request" '
+                    '$status ($bytes_sent) "$http_referer" '
+                    '"$uri $args" [$request_time]\'',
+        epilog='version = {}'.format(__version__)
+    )
     parser.add_argument('--logfile', '-l', action='store',
                         help='Log file for analysis', required=True)
     parser.add_argument('--outfile', '-o', action='store',
