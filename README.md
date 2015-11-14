@@ -16,7 +16,7 @@ usage:
     usage: nginxparser [-h] --logfile LOGFILE [--outfile OUTFILE]
                        [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
                        [--median] [--remote] [--status [STATUS [STATUS ...]]]
-                       [--debug]
+                       [--limit LIMIT] [--debug]
 
 optional arguments:
 
@@ -38,6 +38,8 @@ optional arguments:
                             remote hosts
       --status [STATUS [STATUS ...]], -s [STATUS [STATUS ...]]
                             Print the report, based on the request status
+      --limit LIMIT, -L LIMIT
+                            Limit the output reports. Default 100.
       --debug, -d           Displays the count of unparsed lines and the unparsed
                             line numbers
               
