@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-#from . import __version__
+from . import __version__
 from argparse import ArgumentParser
 from datetime import datetime
 from operator import itemgetter
@@ -147,7 +147,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                     median_urls[request].append(upstream_response_time)
 
             # Creation the report based on the number of calls from remote hosts
-            if remote:
+            if remote or slow:
                 if remote_addr in remote_host_report.keys():
                     remote_host_report[remote_addr] += 1
                 else:
@@ -265,17 +265,21 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 break
             print("| {0:>17} | {1:<}".format(e[1], e[0]))
 
-    #Sort and print the report based on the slow clients
+    # Sort and print the report based on the slow clients
     if slow:
-        sorted_slow_clients = sorted(slow_clients.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report based on the slow clients {}".format("=" * 67))
-        print("| {0:>17} | {1:<}".format("Slow calls", "Remote host"))
+        slow_percent = {}
+        for e in slow_clients.keys():
+            slow_percent[e] = round(slow_clients[e] / remote_host_report[e] * 100, 2)
+        sorted_slow_percent = sorted(slow_percent.items(), key=itemgetter(1), reverse=True)
+        print("\n= The report based on the slow clients {}".format("=" * 68))
+        print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format("All calls", "Slow calls", "Percent of slow calls", "Remote host"))
         printed_lines = 0
-        for e in sorted_slow_clients:
+        for e in sorted_slow_percent:
             printed_lines += 1
             if printed_lines > limit:
                 break
-            print("| {0:>17} | {1:<}".format(e[1], e[0]))
+            print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format(remote_host_report[e[0]], slow_clients[e[0]],
+                                                                 e[1], e[0]))
 
     # Displays the count of unparsed lines and the unparsed line numbers
     if debug:
@@ -290,7 +294,7 @@ def main():
         description='using log format: \'$remote_addr - [$time_local] "$host" "$request" '
                     '$status ($bytes_sent) "$http_referer" '
                     '"$uri $args" [$request_time] [$upstream_response_time]\'',
-#        epilog='version = {}'.format(__version__)
+        epilog='version = {}'.format(__version__)
     )
     parser.add_argument('--logfile', '-l', action='store',
                         help='Log file for analysis', required=True)

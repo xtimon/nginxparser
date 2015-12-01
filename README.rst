@@ -6,8 +6,11 @@ It works on python2.7 and python 3.*
 ************************************
 
 Caution in this version of the log format is changed!
+
 Added $ upstream_response_time.
+
 All reports are based on this value.
+
 Also added a report on the slow clients.
 
 Using log format:
@@ -56,4 +59,4 @@ nginxparser -l /path/to/access_nginx.log -t -e /static /exclude
 
 nginxparser -l /path/to/access_nginx.log -s 500 499 -o /path/to/outfile.txt
 
-nginxparser -l ../nginx_access.log -o ../test_all.txt -e /static /pull -tcmr -s 499 500 -p 2015.10.06_00:00:00 2015.10.07_00:00:00
+nginxparser -l ../nginx_access.log -o ../test_all.txt -e /static /pull -tcmrS -s 499 500 -p 2015.10.06_00:00:00 2015.10.07_00:00:00
