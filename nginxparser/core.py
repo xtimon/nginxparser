@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-from . import __version__
+#from . import __version__
 from argparse import ArgumentParser
 from datetime import datetime
 from operator import itemgetter
@@ -24,12 +24,12 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period, limit):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period, limit, slow):
 
     # Creation of a regular expression for the format used
     log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
                  '(\d{3}) \((\d+)\) "(.+)" ' \
-                 '"(.+) (.+)" \[([\d.]+)]'
+                 '"(.+) (.+)" \[([\d.]+)] \[([\d.-]+)]'
     line_re = compile(log_format)
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
@@ -45,6 +45,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     debug_rows = []
     median_urls = {}
     remote_host_report = {}
+    slow_clients = {}
     if period:
         startdatetime = datetime.strptime(period[0], "%Y.%m.%d_%H:%M:%S")
         stopdatetime = datetime.strptime(period[1], "%Y.%m.%d_%H:%M:%S")
@@ -73,6 +74,10 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
             # uri = line_opts[0][8]
             # args = line_opts[0][9]
             request_time = float(line_opts[0][10])
+            if line_opts[0][11] == '-':
+                upstream_response_time = request_time
+            else:
+                upstream_response_time = float(line_opts[0][11])
 
             stop = False
             if exclude:
@@ -97,11 +102,11 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 summary['by_types'][request_type] = 1
 
             # By time
-            summary['by_time']['Overall'] += request_time
+            summary['by_time']['Overall'] += upstream_response_time
             if request_type in summary['by_time'].keys():
-                summary['by_time'][request_type] += request_time
+                summary['by_time'][request_type] += upstream_response_time
             else:
-                summary['by_time'][request_type] = request_time
+                summary['by_time'][request_type] = upstream_response_time
 
             # By status
             if status in summary['by_status'].keys():
@@ -112,9 +117,9 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
             # Creation the total timing and the count report
             if time or count:
                 if request in time_total.keys():
-                    time_total[request] += request_time
+                    time_total[request] += upstream_response_time
                 else:
-                    time_total[request] = request_time
+                    time_total[request] = upstream_response_time
                 if request in count_total.keys():
                     count_total[request] += 1
                 else:
@@ -129,17 +134,17 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                         else:
                             status_rep_count_dict[s][request] = 1
                         if request in status_rep_time_dict[s].keys():
-                            status_rep_time_dict[s][request] += request_time
+                            status_rep_time_dict[s][request] += upstream_response_time
                         else:
-                            status_rep_time_dict[s][request] = request_time
+                            status_rep_time_dict[s][request] = upstream_response_time
 
             # Creation the report based on a median duration of calls
             if median:
                 if request in median_urls.keys():
-                    median_urls[request].append(request_time)
+                    median_urls[request].append(upstream_response_time)
                 else:
                     median_urls[request] = []
-                    median_urls[request].append(request_time)
+                    median_urls[request].append(upstream_response_time)
 
             # Creation the report based on the number of calls from remote hosts
             if remote:
@@ -147,6 +152,14 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                     remote_host_report[remote_addr] += 1
                 else:
                     remote_host_report[remote_addr] = 1
+
+            #Creation the report based on the slow clients
+            if slow:
+                if request_time - upstream_response_time > 1:
+                    if remote_addr in slow_clients.keys():
+                        slow_clients[remote_addr] += 1
+                    else:
+                        slow_clients[remote_addr] = 1
 
         elif debug:
             debug_rows.append(log_line_nu)
@@ -252,6 +265,18 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 break
             print("| {0:>17} | {1:<}".format(e[1], e[0]))
 
+    #Sort and print the report based on the slow clients
+    if slow:
+        sorted_slow_clients = sorted(slow_clients.items(), key=itemgetter(1), reverse=True)
+        print("\n= The report based on the slow clients {}".format("=" * 67))
+        print("| {0:>17} | {1:<}".format("Slow calls", "Remote host"))
+        printed_lines = 0
+        for e in sorted_slow_clients:
+            printed_lines += 1
+            if printed_lines > limit:
+                break
+            print("| {0:>17} | {1:<}".format(e[1], e[0]))
+
     # Displays the count of unparsed lines and the unparsed line numbers
     if debug:
         print("\nUnparsed rows number: {}".format(len(debug_rows)))
@@ -264,8 +289,8 @@ def main():
     parser = ArgumentParser(
         description='using log format: \'$remote_addr - [$time_local] "$host" "$request" '
                     '$status ($bytes_sent) "$http_referer" '
-                    '"$uri $args" [$request_time]\'',
-        epilog='version = {}'.format(__version__)
+                    '"$uri $args" [$request_time] [$upstream_response_time]\'',
+#        epilog='version = {}'.format(__version__)
     )
     parser.add_argument('--logfile', '-l', action='store',
                         help='Log file for analysis', required=True)
@@ -289,13 +314,15 @@ def main():
                         help='Print the report based on the request status')
     parser.add_argument('--limit', '-L', action='store', default=100, type=int,
                         help='Limit the output reports. Default 100.')
+    parser.add_argument('--slow', '-S', action='count',
+                        help='Print the report based on the slow clients')
     parser.add_argument('--debug', '-d', action='count',
                         help='Displays the count of unparsed lines and the unparsed line numbers')
     args = parser.parse_args()
     if path.isfile(args.logfile):
         analyze_log(args.logfile, args.outfile, args.time, args.count,
                     args.exclude, args.status, args.debug, args.median,
-                    args.remote, args.period, args.limit)
+                    args.remote, args.period, args.limit, args.slow)
     else:
         print("This is not a file: {}".format(args.logfile))
 

@@ -1,5 +1,9 @@
 # nginx_parser
 It works on python2.7 and python 3.*
+Caution in this version of the log format is changed!
+Added $upstream_response_time.
+All reports are based on this value.
+Also added a report on the slow clients.
 
 Installation:
 
@@ -9,14 +13,14 @@ Using log format:
 
     log_format myformat '$remote_addr - [$time_local] "$host" "$request" '
                         '$status ($bytes_sent) "$http_referer" '
-                        '"$uri $args" [$request_time]';
+                        '"$uri $args" [$request_time] [$upstream_response_time]';
 
 usage: 
 
     usage: nginxparser [-h] --logfile LOGFILE [--outfile OUTFILE]
                        [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
                        [--median] [--remote] [--status [STATUS [STATUS ...]]]
-                       [--limit LIMIT] [--debug]
+                       [--limit LIMIT] [--slow] [--debug]
 
 optional arguments:
 
@@ -40,6 +44,7 @@ optional arguments:
                             Print the report, based on the request status
       --limit LIMIT, -L LIMIT
                             Limit the output reports. Default 100.
+      --slow, -S            Print the report based on the slow clients
       --debug, -d           Displays the count of unparsed lines and the unparsed
                             line numbers
               
