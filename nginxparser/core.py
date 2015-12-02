@@ -29,7 +29,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     # Creation of a regular expression for the format used
     log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
                  '(\d{3}) \((\d+)\) "(.+)" ' \
-                 '"(.+) (.+)" \[([\d.]+)] \[([\d.-]+)]'
+                 '"(.+) (.+)" \[([\d\.]+)] \[([\d\.-]+)]'
     line_re = compile(log_format)
     summary = {'by_types': {'Overall': 0},
                'by_time': {'Overall': 0},
