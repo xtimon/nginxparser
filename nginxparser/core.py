@@ -153,7 +153,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 else:
                     remote_host_report[remote_addr] = 1
 
-            #Creation the report based on the slow clients
+            #Creation the report is based on the difference between $request_time and $upstream_response_time
             if difference:
                 if request_time - upstream_response_time > difference:
                     if remote_addr in difference_report.keys():
@@ -265,13 +265,14 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 break
             print("| {0:>17} | {1:<}".format(e[1], e[0]))
 
-    # Sort and print the report based on the slow clients
+    # Sort and print the report is based on the difference between $request_time and $upstream_response_time
     if difference:
         slow_percent = {}
         for e in difference_report.keys():
             slow_percent[e] = round(difference_report[e] / remote_host_report[e] * 100, 2)
         sorted_slow_percent = sorted(slow_percent.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report based on the slow clients {}".format("=" * 68))
+        print("\n= The report is based on the difference between $request_time and $upstream_response_time {}".
+              format("=" * 17))
         print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format("All calls", "Slow calls", "Percent of slow calls", "Remote host"))
         printed_lines = 0
         for e in sorted_slow_percent:
