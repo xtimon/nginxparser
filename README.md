@@ -1,13 +1,10 @@
 # nginx_parser
-It works on python2.7 and python 3.*
+##It works on python2.7 and python 3.*
 
-Caution in this version of the log format is changed!
-
-Added $upstream_response_time.
-
-All reports are based on this value.
-
-Also added a report on the slow clients.
+###Caution in this version of the log format is changed!
+###Added $upstream_response_time.
+###All reports are based on this value.
+###Also added the report is based on the difference between $request_time and $upstream_response_time.
 
 Installation:
 
@@ -22,9 +19,10 @@ Using log format:
 usage: 
 
     usage: nginxparser [-h] --logfile LOGFILE [--outfile OUTFILE]
-                       [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
-                       [--median] [--remote] [--status [STATUS [STATUS ...]]]
-                       [--limit LIMIT] [--slow] [--debug]
+                   [--period PERIOD PERIOD]
+                   [--exclude [EXCLUDE [EXCLUDE ...]]] [--time] [--count]
+                   [--median] [--status [STATUS [STATUS ...]]] [--remote]
+                   [--difference DIFFERENCE] [--limit LIMIT] [--debug]
 
 optional arguments:
 
@@ -44,12 +42,16 @@ optional arguments:
       --median, -m          Print the report based on a median duration of calls
       --remote, -r          Print the report based on the number of calls from
                             remote hosts
+      --difference DIFFERENCE, -d DIFFERENCE
+                            Print the report is based on the difference between
+                            $request_time and $upstream_response_time. It
+                            specifies the minimum difference, in seconds, for the
+                            registration of the request. Example -d 0.5
       --status [STATUS [STATUS ...]], -s [STATUS [STATUS ...]]
                             Print the report, based on the request status
       --limit LIMIT, -L LIMIT
                             Limit the output reports. Default 100.
-      --slow, -S            Print the report based on the slow clients
-      --debug, -d           Displays the count of unparsed lines and the unparsed
+      --debug, -D           Displays the count of unparsed lines and the unparsed
                             line numbers
               
 examples:
