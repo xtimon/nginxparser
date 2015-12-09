@@ -24,7 +24,7 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period, limit, slow):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period, limit, difference):
 
     # Creation of a regular expression for the format used
     log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
@@ -45,7 +45,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     debug_rows = []
     median_urls = {}
     remote_host_report = {}
-    slow_clients = {}
+    difference_report = {}
     if period:
         startdatetime = datetime.strptime(period[0], "%Y.%m.%d_%H:%M:%S")
         stopdatetime = datetime.strptime(period[1], "%Y.%m.%d_%H:%M:%S")
@@ -147,19 +147,19 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                     median_urls[request].append(upstream_response_time)
 
             # Creation the report based on the number of calls from remote hosts
-            if remote or slow:
+            if remote or difference:
                 if remote_addr in remote_host_report.keys():
                     remote_host_report[remote_addr] += 1
                 else:
                     remote_host_report[remote_addr] = 1
 
             #Creation the report based on the slow clients
-            if slow:
-                if request_time - upstream_response_time > 1:
-                    if remote_addr in slow_clients.keys():
-                        slow_clients[remote_addr] += 1
+            if difference:
+                if request_time - upstream_response_time > difference:
+                    if remote_addr in difference_report.keys():
+                        difference_report[remote_addr] += 1
                     else:
-                        slow_clients[remote_addr] = 1
+                        difference_report[remote_addr] = 1
 
         elif debug:
             debug_rows.append(log_line_nu)
@@ -266,10 +266,10 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
             print("| {0:>17} | {1:<}".format(e[1], e[0]))
 
     # Sort and print the report based on the slow clients
-    if slow:
+    if difference:
         slow_percent = {}
-        for e in slow_clients.keys():
-            slow_percent[e] = round(slow_clients[e] / remote_host_report[e] * 100, 2)
+        for e in difference_report.keys():
+            slow_percent[e] = round(difference_report[e] / remote_host_report[e] * 100, 2)
         sorted_slow_percent = sorted(slow_percent.items(), key=itemgetter(1), reverse=True)
         print("\n= The report based on the slow clients {}".format("=" * 68))
         print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format("All calls", "Slow calls", "Percent of slow calls", "Remote host"))
@@ -278,7 +278,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
             printed_lines += 1
             if printed_lines > limit:
                 break
-            print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format(remote_host_report[e[0]], slow_clients[e[0]],
+            print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format(remote_host_report[e[0]], difference_report[e[0]],
                                                                  e[1], e[0]))
 
     # Displays the count of unparsed lines and the unparsed line numbers
@@ -312,21 +312,23 @@ def main():
                         help='Print the report based on the total number of queries')
     parser.add_argument('--median', '-m', action='count',
                         help='Print the report based on a median duration of calls')
-    parser.add_argument('--remote', '-r', action='count',
-                        help='Print the report based on the number of calls from remote hosts')
     parser.add_argument('--status', '-s', action='store', nargs='*', type=int,
                         help='Print the report based on the request status')
+    parser.add_argument('--remote', '-r', action='count',
+                        help='Print the report based on the number of calls from remote hosts')
+    parser.add_argument('--difference', '-d', action='store', type=float,
+                        help='Print the report is based on the difference between $request_time and '
+                             '$upstream_response_time. It specifies the minimum difference, in seconds, '
+                             'for the registration of the request. Example -d 0.5')
     parser.add_argument('--limit', '-L', action='store', default=100, type=int,
                         help='Limit the output reports. Default 100.')
-    parser.add_argument('--slow', '-S', action='count',
-                        help='Print the report based on the slow clients')
-    parser.add_argument('--debug', '-d', action='count',
+    parser.add_argument('--debug', '-D', action='count',
                         help='Displays the count of unparsed lines and the unparsed line numbers')
     args = parser.parse_args()
     if path.isfile(args.logfile):
         analyze_log(args.logfile, args.outfile, args.time, args.count,
                     args.exclude, args.status, args.debug, args.median,
-                    args.remote, args.period, args.limit, args.slow)
+                    args.remote, args.period, args.limit, args.difference)
     else:
         print("This is not a file: {}".format(args.logfile))
 
