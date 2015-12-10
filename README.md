@@ -1,14 +1,6 @@
 # nginx_parser
 ##It works on python2.7 and python 3.*
 
-######Caution in this version of the log format is changed!
-
-Added $upstream_response_time.
-
-All reports are based on this value.
-
-Also added the report is based on the difference between $request_time and $upstream_response_time.
-
 Installation:
 
     pip install nginxparser

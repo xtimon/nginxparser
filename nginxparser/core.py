@@ -39,6 +39,7 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     if status_rep:
         status_rep_time_dict = {}
         status_rep_count_dict = {}
+        status_rep_timeline_dict = {}
         for s in status_rep:
             status_rep_count_dict[s] = {}
             status_rep_time_dict[s] = {}
@@ -137,6 +138,17 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                             status_rep_time_dict[s][request] += upstream_response_time
                         else:
                             status_rep_time_dict[s][request] = upstream_response_time
+                        no_tz_local_time = time_local[:-6]
+                        req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M:%S")
+                        line_minute = req_dt.strftime('%d %b %H:%M')
+                        if line_minute in status_rep_timeline_dict.keys():
+                            if s in status_rep_timeline_dict[line_minute].keys():
+                                status_rep_timeline_dict[line_minute][s] += 1
+                            else:
+                                status_rep_timeline_dict[line_minute][s] = 1
+                        else:
+                            status_rep_timeline_dict[line_minute] = {}
+                            status_rep_timeline_dict[line_minute][s] = 1
 
             # Creation the report based on a median duration of calls
             if median:
@@ -252,6 +264,19 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                 print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
                       format(e[1], round(status_rep_time_dict[s][e[0]], 2),
                              round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
+        print("\n= The number of requests with the specified status in a minute {}".format("=" * 44))
+        line = 'DateTime'
+        for s in status_rep:
+            line += '\t\t' + str(s)
+        print(line)
+        for m in sorted(status_rep_timeline_dict.keys()):
+            line = m
+            for s in status_rep:
+                if s in status_rep_timeline_dict[m].keys():
+                    line += '\t\t' + str(status_rep_timeline_dict[m][s])
+                else:
+                    line += '\t\t0'
+            print(line)
 
     # Sort and and print the report based on the number of calls from remote hosts
     if remote:
@@ -273,7 +298,8 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
         sorted_slow_percent = sorted(slow_percent.items(), key=itemgetter(1), reverse=True)
         print("\n= The report is based on the difference between $request_time and $upstream_response_time {}".
               format("=" * 17))
-        print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format("All calls", "Slow calls", "Percent of slow calls", "Remote host"))
+        print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format("All calls", "Slow calls", "Percent of slow calls",
+                                                             "Remote host"))
         printed_lines = 0
         for e in sorted_slow_percent:
             printed_lines += 1

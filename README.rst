@@ -4,16 +4,6 @@ nginx\_parser
 It works on python2.7 and python 3.\*
 -------------------------------------
 
-Caution in this version of the log format is changed!
-                                                     
-
-Added $upstream\_response\_time.
-
-All reports are based on this value.
-
-Also added the report is based on the difference between
-:math:`request_time and `\ upstream\_response\_time.
-
 Installation:
 
 ::
