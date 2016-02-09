@@ -2,7 +2,7 @@
 import sys
 from . import __version__
 from argparse import ArgumentParser
-from datetime import datetime
+from datetime import datetime, timedelta
 from operator import itemgetter
 from os import path, popen
 from re import compile
@@ -24,7 +24,8 @@ def progress_bar(progress):
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, median, remote, period, limit, difference):
+def analyze_log(logfile, outfile, time, count, exclude, status_rep,
+                debug, median, remote, period, limit, difference):
 
     # Creation of a regular expression for the format used
     log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
@@ -56,125 +57,128 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
     log_line_nu = 0
     for log_line in open(logfile, 'r'):
         log_line_nu += 1
-        if lines_count >= 100000:
-            if log_line_nu % percent == 0:
-                progress += 1
-                progress_bar(progress)
-        line_opts = line_re.findall(log_line)
-        if line_opts:
+        try:
+            if lines_count >= 100000:
+                if log_line_nu % percent == 0:
+                    progress += 1
+                    progress_bar(progress)
+            line_opts = line_re.findall(log_line)
+            if line_opts:
 
-            # Get the values from a line
-            remote_addr = line_opts[0][0]
-            time_local =line_opts[0][1]
-            # host = line_opts[0][2]
-            request_type = line_opts[0][3]
-            request = line_opts[0][4]
-            status = line_opts[0][5]
-            # bytes_sent = line_opts[0][6]
-            # http_refferer = line_opts[0][7]
-            # uri = line_opts[0][8]
-            # args = line_opts[0][9]
-            request_time = float(line_opts[0][10])
-            if line_opts[0][11] == '-':
-                upstream_response_time = request_time
-            else:
-                upstream_response_time = float(line_opts[0][11])
+                # Get the values from a line
+                remote_addr = line_opts[0][0]
+                time_local =line_opts[0][1]
+                # host = line_opts[0][2]
+                request_type = line_opts[0][3]
+                request = line_opts[0][4]
+                status = line_opts[0][5]
+                # bytes_sent = line_opts[0][6]
+                # http_refferer = line_opts[0][7]
+                # uri = line_opts[0][8]
+                # args = line_opts[0][9]
+                request_time = float(line_opts[0][10])
+                if line_opts[0][11] == '-':
+                    upstream_response_time = request_time
+                else:
+                    upstream_response_time = float(line_opts[0][11])
 
-            stop = False
-            if exclude:
-                for e in exclude:
-                    if e in request:
-                        stop = True
-                        break
-            if stop:
-                continue
-            if period:
-                no_tz_local_time = time_local[:-6]
-                req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M:%S")
-                if req_dt < startdatetime or req_dt > stopdatetime:
+                stop = False
+                if exclude:
+                    for e in exclude:
+                        if e in request:
+                            stop = True
+                            break
+                if stop:
                     continue
+                if period:
+                    no_tz_local_time = time_local[:-6]
+                    req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M:%S")
+                    if req_dt < startdatetime or req_dt > stopdatetime:
+                        continue
 
-            # Creation the summary
-            # By types
-            summary['by_types']['Overall'] += 1
-            if request_type in summary['by_types'].keys():
-                summary['by_types'][request_type] += 1
-            else:
-                summary['by_types'][request_type] = 1
-
-            # By time
-            summary['by_time']['Overall'] += upstream_response_time
-            if request_type in summary['by_time'].keys():
-                summary['by_time'][request_type] += upstream_response_time
-            else:
-                summary['by_time'][request_type] = upstream_response_time
-
-            # By status
-            if status in summary['by_status'].keys():
-                summary['by_status'][status] += 1
-            else:
-                summary['by_status'][status] = 1
-
-            # Creation the total timing and the count report
-            if time or count:
-                if request in time_total.keys():
-                    time_total[request] += upstream_response_time
+                # Creation the summary
+                # By types
+                summary['by_types']['Overall'] += 1
+                if request_type in summary['by_types'].keys():
+                    summary['by_types'][request_type] += 1
                 else:
-                    time_total[request] = upstream_response_time
-                if request in count_total.keys():
-                    count_total[request] += 1
+                    summary['by_types'][request_type] = 1
+
+                # By time
+                summary['by_time']['Overall'] += upstream_response_time
+                if request_type in summary['by_time'].keys():
+                    summary['by_time'][request_type] += upstream_response_time
                 else:
-                    count_total[request] = 1
+                    summary['by_time'][request_type] = upstream_response_time
 
-            # Creation the report, based on the request status
-            if status_rep:
-                for s in status_rep:
-                    if str(s) == status:
-                        if request in status_rep_count_dict[s].keys():
-                            status_rep_count_dict[s][request] += 1
-                        else:
-                            status_rep_count_dict[s][request] = 1
-                        if request in status_rep_time_dict[s].keys():
-                            status_rep_time_dict[s][request] += upstream_response_time
-                        else:
-                            status_rep_time_dict[s][request] = upstream_response_time
-                        no_tz_local_time = time_local[:-6]
-                        req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M:%S")
-                        line_minute = req_dt.strftime('%d %b %H:%M')
-                        if line_minute in status_rep_timeline_dict.keys():
-                            if s in status_rep_timeline_dict[line_minute].keys():
-                                status_rep_timeline_dict[line_minute][s] += 1
-                            else:
-                                status_rep_timeline_dict[line_minute][s] = 1
-                        else:
-                            status_rep_timeline_dict[line_minute] = {}
-                            status_rep_timeline_dict[line_minute][s] = 1
-
-            # Creation the report based on a median duration of calls
-            if median:
-                if request in median_urls.keys():
-                    median_urls[request].append(upstream_response_time)
+                # By status
+                if status in summary['by_status'].keys():
+                    summary['by_status'][status] += 1
                 else:
-                    median_urls[request] = []
-                    median_urls[request].append(upstream_response_time)
+                    summary['by_status'][status] = 1
 
-            # Creation the report based on the number of calls from remote hosts
-            if remote or difference:
-                if remote_addr in remote_host_report.keys():
-                    remote_host_report[remote_addr] += 1
-                else:
-                    remote_host_report[remote_addr] = 1
-
-            #Creation the report is based on the difference between $request_time and $upstream_response_time
-            if difference:
-                if request_time - upstream_response_time > difference:
-                    if remote_addr in difference_report.keys():
-                        difference_report[remote_addr] += 1
+                # Creation the total timing and the count report
+                if time or count:
+                    if request in time_total.keys():
+                        time_total[request] += upstream_response_time
                     else:
-                        difference_report[remote_addr] = 1
+                        time_total[request] = upstream_response_time
+                    if request in count_total.keys():
+                        count_total[request] += 1
+                    else:
+                        count_total[request] = 1
 
-        elif debug:
-            debug_rows.append(log_line_nu)
+                # Creation the report, based on the request status
+                if status_rep:
+                    for s in status_rep:
+                        if str(s) == status:
+                            if request in status_rep_count_dict[s].keys():
+                                status_rep_count_dict[s][request] += 1
+                            else:
+                                status_rep_count_dict[s][request] = 1
+                            if request in status_rep_time_dict[s].keys():
+                                status_rep_time_dict[s][request] += upstream_response_time
+                            else:
+                                status_rep_time_dict[s][request] = upstream_response_time
+                            no_tz_local_time = time_local[:-9]
+                            req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M")
+                            if req_dt in status_rep_timeline_dict.keys():
+                                if s in status_rep_timeline_dict[req_dt].keys():
+                                    status_rep_timeline_dict[req_dt][s] += 1
+                                else:
+                                    status_rep_timeline_dict[req_dt][s] = 1
+                            else:
+                                status_rep_timeline_dict[req_dt] = {}
+                                status_rep_timeline_dict[req_dt][s] = 1
+
+                # Creation the report based on a median duration of calls
+                if median:
+                    if request in median_urls.keys():
+                        median_urls[request].append(upstream_response_time)
+                    else:
+                        median_urls[request] = []
+                        median_urls[request].append(upstream_response_time)
+
+                # Creation the report based on the number of calls from remote hosts
+                if remote or difference:
+                    if remote_addr in remote_host_report.keys():
+                        remote_host_report[remote_addr] += 1
+                    else:
+                        remote_host_report[remote_addr] = 1
+
+                #Creation the report is based on the difference between $request_time and $upstream_response_time
+                if difference:
+                    if request_time - upstream_response_time > difference:
+                        if remote_addr in difference_report.keys():
+                            difference_report[remote_addr] += 1
+                        else:
+                            difference_report[remote_addr] = 1
+
+            elif debug:
+                debug_rows.append(log_line_nu)
+        except:
+            if debug:
+                debug_rows.append(log_line_nu)
 
     # Redirect out to the file
     if outfile:
@@ -265,17 +269,28 @@ def analyze_log(logfile, outfile, time, count, exclude, status_rep, debug, media
                       format(e[1], round(status_rep_time_dict[s][e[0]], 2),
                              round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
         print("\n= The number of requests with the specified status in a minute {}".format("=" * 44))
+        report_start = min(status_rep_timeline_dict.keys())
+        report_stop = max(status_rep_timeline_dict.keys())
+        all_minutes = list()
+        all_minutes.append(report_start)
+        current_minute = report_start
+        while current_minute < report_stop:
+            current_minute += timedelta(minutes=1)
+            all_minutes.append(current_minute)
         line = 'DateTime'
         for s in status_rep:
             line += '\t\t' + str(s)
         print(line)
-        for m in sorted(status_rep_timeline_dict.keys()):
-            line = m
-            for s in status_rep:
-                if s in status_rep_timeline_dict[m].keys():
-                    line += '\t\t' + str(status_rep_timeline_dict[m][s])
-                else:
-                    line += '\t\t0'
+        for m in all_minutes:
+            line = m.strftime('%d %b %H:%M')
+            if m in status_rep_timeline_dict.keys():
+                for s in status_rep:
+                    if s in status_rep_timeline_dict[m].keys():
+                        line += '\t\t' + str(status_rep_timeline_dict[m][s])
+                    else:
+                        line += '\t\t0'
+            else:
+                line += '\t\t0' * len(status_rep)
             print(line)
 
     # Sort and and print the report based on the number of calls from remote hosts
