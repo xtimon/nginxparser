@@ -53,4 +53,4 @@ examples:
 
     nginxparser -l /path/to/access_nginx.log -t -e /static /exclude
     nginxparser -l /path/to/access_nginx.log -s 500 499 -o /path/to/outfile.txt
-    nginxparser -l ../nginx_access.log -o ../test_all.txt -e /static /pull -tcmrS -s 499 500 -p 2015.10.06_00:00:00 2015.10.07_00:00:00
+    nginxparser -l ../nginx_access.log -o ../test_all.txt -e /static /pull -tcmr -s 200 499 500 502 -p 2015.10.06_00:00:00 2015.10.07_00:00:00
