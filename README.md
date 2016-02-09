@@ -1,4 +1,4 @@
-# nginx_parser
+# nginxparser
 ##It works on python2.7 and python 3.*
 
 Installation:
