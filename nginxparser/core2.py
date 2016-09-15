@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from re import compile
+import re
+from .patterns import log_format
 
 
 def read_file_line(file_name):
@@ -12,38 +13,14 @@ def read_file_line(file_name):
             yield line
 
 
-def grep(pattern):
-    print("Searching for", pattern)
-    while True:
-        line = (yield)
-        if pattern in line:
-            print(line)
-
-
 def parse_line(log_format):
-    lf = compile(log_format)
     while True:
         line = (yield)
-        print(lf.findall(line))
+        m = re.match(log_format, line)
+        print(m.groupdict())
 
-
-log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
-             '(\d{3}) \((\d+)\) "(.+)" ' \
-             '"(.+) (.+)" \[([\d\.]+)] \[([\d\.-]+)]'
-
-
-
-
-
-
-search = grep('buyouts')
-next(search)
 
 parse = parse_line(log_format)
 next(parse)
-
 lines = read_file_line("test.log")
-
-search.send(lines.__next__())
-
 parse.send(lines.__next__())
