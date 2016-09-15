@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import re
+from .classes import Task
+from .classes import Scheduler
 from .patterns import log_format
 
 
