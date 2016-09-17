@@ -33,43 +33,42 @@ def parse_line(log_format):
 def analyze():
     cm = count_methods()
     next(cm)
-    responsed_count = 0
     while True:
         d = (yield)
-        try:
-            upstream_time = float(d['upstream_time'])
-            responsed_count +=1
-        except ValueError:
-            upstream_time = -1
-        request_time = float(d['request_time'])
-        print(upstream_time)
-        cm.send({'method': d['method'], 'request_time': request_time, 'upstream_time': upstream_time})
+        cm.send(d)
 
 
 def count_methods():
-    count = {}
+    methods = {}
     while True:
         d = (yield)
         method = d['method']
-        request_time = d['request_time']
-        upstream_time = d['upstream_time']
-        not_responded = 0
-        if upstream_time == -1:
-            not_responded = 1
+        uri = d['uri']
+        bytes = int(d['bytes_sent'])
+        request_time = float(d['request_time'])
+        status = d['status']
+        try:
+            upstream_time = float(d['upstream_time'])
+            responded = 1
+        except ValueError:
             upstream_time = 0
-        if method in count.keys():
-            count[method]['count'] += 1
-            count[method]['upstream_time'] += upstream_time
-            count[method]['request_time'] += request_time
-            count[method]['not_responded'] += not_responded
-        else:
-            count[method] = {
-                'count': 1,
-                'upstream_time': upstream_time,
-                'request_time': request_time,
-                'not_responded': not_responded
-            }
-        print(count)
+            responded = 0
+        methods[method] = methods.get(method, {})
+        methods[method][uri] = methods[method].get(uri, {
+            "count": 0,
+            "responded": 0,
+            "bytes_sent": 0,
+            "request_time": 0,
+            "upstream_time": 0,
+            "status": {}
+        })
+        methods[method][uri]["status"][status] = methods[method][uri]["status"].get(status, 0) + 1
+        methods[method][uri]["count"] += 1
+        methods[method][uri]["responded"] += responded
+        methods[method][uri]["bytes_sent"] += bytes
+        methods[method][uri]["request_time"] += request_time
+        methods[method][uri]["upstream_time"] += upstream_time
+        print(methods)
 
 
 parse = parse_line(log_format)
