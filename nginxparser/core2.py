@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+from datetime import datetime
 from patterns import log_format
 
 
@@ -33,9 +34,12 @@ def parse_line(log_format):
 def analyze():
     cm = count_methods()
     next(cm)
+    ct = count_timeline()
+    next(ct)
     while True:
         d = (yield)
         cm.send(d)
+        ct.send(d)
 
 
 def count_methods():
@@ -43,7 +47,7 @@ def count_methods():
     while True:
         d = (yield)
         method = d['method']
-        uri = d['uri']
+        uri = re.sub('\d+', '%d', d['uri'])
         bytes = int(d['bytes_sent'])
         request_time = float(d['request_time'])
         status = d['status']
@@ -69,6 +73,17 @@ def count_methods():
         methods[method][uri]["request_time"] += request_time
         methods[method][uri]["upstream_time"] += upstream_time
         print(methods)
+
+
+def count_timeline():
+    timeline = {}
+    while True:
+        d = (yield)
+        timestamp = datetime.strptime(d['local_time'][:-9], '%d/%b/%Y:%H:%M')
+        status = d['status']
+        timeline[timestamp] = timeline.get(timestamp, {})
+        timeline[timestamp][status] = timeline[timestamp].get(status, 0) + 1
+        print(timeline)
 
 
 parse = parse_line(log_format)
