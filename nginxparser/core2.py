@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import asyncio
 import re
 import timeit
+import json
 from datetime import datetime
 from patterns import log_format
 
@@ -16,11 +16,15 @@ def read_file_line(file_name):
             yield line
 
 
+def date_to_json(obj):
+    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
+
+
 def count_methods():
     methods = {}
     while True:
         d = (yield)
-        if isinstance(d, dict):
+        if d:
             method = d['method']
             uri = re.sub('\d+', '%d', d['uri'])
             bytes = int(d['bytes_sent'])
@@ -54,7 +58,7 @@ def count_timeline():
     timeline = {}
     while True:
         d = (yield)
-        if isinstance(d, dict):
+        if d:
             timestamp = datetime.strptime(d['local_time'][:-9], '%d/%b/%Y:%H:%M')
             status = d['status']
             timeline[timestamp] = timeline.get(timestamp, {})
@@ -62,8 +66,10 @@ def count_timeline():
         yield timeline
 
 
-def parse(file_name, log_format):
-    lines = read_file_line(file_name)
+def parse(log_format=log_format, **kwargs):
+    log_file = kwargs.get('log_file', '')
+    out_json_file = kwargs.get('out_json_file', '')
+    lines = read_file_line(log_file)
     total_count = 0
     parsed_count = 0
     cm = count_methods()
@@ -80,16 +86,22 @@ def parse(file_name, log_format):
             ct.send(parsed_line)
         except AttributeError:
             print('Line {}: {} not parsed'.format(total_count, line))
-        print('total count: {}\tparsed_count: {}'.format(total_count, parsed_count))
     methods = cm.send(None)
     timeline = ct.send(None)
     cm.close()
     ct.close()
-    print(methods)
-    print(timeline)
+    if out_json_file:
+        with open(out_json_file, 'w') as ojf:
+            json_timeline = {}
+            for tm in timeline.keys():
+                json_timeline[date_to_json(tm)] = timeline[tm]
+            json.dump({
+                "methods": methods,
+                "timeline": json_timeline
+            }, ojf)
 
 
 start = timeit.timeit()
-parse("test.log", log_format)
+parse(**{'log_file': "test.log", 'out_json_file': "out.json"})
 stop = timeit.timeit()
 print(stop - start)
