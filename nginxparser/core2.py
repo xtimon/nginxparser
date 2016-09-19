@@ -74,7 +74,7 @@ def count_timeline():
         timeline[timestamp] = timeline.get(timestamp, {})
         timeline[timestamp][status] = timeline[timestamp].get(status, 0) + 1
         print(timeline)
-
+    
 
 parse = parse_line(log_format)
 next(parse)
