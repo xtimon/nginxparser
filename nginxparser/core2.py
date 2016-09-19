@@ -101,7 +101,4 @@ def parse(log_format=log_format, **kwargs):
             }, ojf)
 
 
-start = timeit.timeit()
 parse(**{'log_file': "test.log", 'out_json_file': "out.json"})
-stop = timeit.timeit()
-print(stop - start)
