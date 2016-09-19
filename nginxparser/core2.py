@@ -96,6 +96,8 @@ def parse(log_format=log_format, **kwargs):
             for tm in timeline.keys():
                 json_timeline[date_to_json(tm)] = timeline[tm]
             json.dump({
+                "total_count": total_count,
+                "parsed_count": parsed_count,
                 "methods": methods,
                 "timeline": json_timeline
             }, ojf)
