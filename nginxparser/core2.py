@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import asyncio
 import re
 from datetime import datetime
 from patterns import log_format
@@ -15,8 +16,6 @@ def read_file_line(file_name):
 
 
 def parse_line(log_format):
-    a = analyze()
-    next(a)
     total_count = 0
     parsed_count = 0
     while True:
@@ -24,22 +23,13 @@ def parse_line(log_format):
         m = re.match(log_format, line)
         total_count += 1
         try:
-            a.send(m.groupdict())
+            parsed_line = m.groupdict()
             parsed_count += 1
+            cm.send(parsed_line)
+            ct.send(parsed_line)
         except AttributeError:
             print('Line {}: {} not parsed'.format(total_count, line))
         print('total count: {}\tparsed_count: {}'.format(total_count, parsed_count))
-
-
-def analyze():
-    cm = count_methods()
-    next(cm)
-    ct = count_timeline()
-    next(ct)
-    while True:
-        d = (yield)
-        cm.send(d)
-        ct.send(d)
 
 
 def count_methods():
@@ -89,5 +79,9 @@ def count_timeline():
 parse = parse_line(log_format)
 next(parse)
 lines = read_file_line("test.log")
+cm = count_methods()
+ct = count_timeline()
+next(cm)
+next(ct)
 parse.send(lines.__next__())
 # parse.send(next(lines))
