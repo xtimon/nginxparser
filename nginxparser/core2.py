@@ -2,6 +2,8 @@
 
 import re
 import json
+import sys
+from argparse import ArgumentParser
 from datetime import datetime
 from patterns import log_format
 
@@ -13,10 +15,6 @@ def read_file_line(file_name):
             if not line:
                 break
             yield line
-
-
-def date_to_json(obj):
-    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
 
 
 def count_methods():
@@ -95,9 +93,19 @@ def count_clients():
         yield clients
 
 
-def parse(log_format=log_format, **kwargs):
-    log_file = kwargs.get('log_file', '')
-    out_json_file = kwargs.get('out_json_file', '')
+def progress_bar(total, current, parsed):
+    sys.stdout.write('\rTotal: {}\tCurrent: {} ({}%)\tParsed: {} ({}%)'.format(
+        total,
+        current,
+        current * 100 // total,
+        parsed,
+        parsed * 100 // total
+    ))
+    sys.stdout.flush()
+
+
+def parse(log_file, debug=False, log_format=log_format):
+    lines_count = sum(1 for l in open(log_file))
     lines = read_file_line(log_file)
     total_count = 0
     parsed_count = 0
@@ -117,25 +125,51 @@ def parse(log_format=log_format, **kwargs):
             ct.send(parsed_line)
             cc.send(parsed_line)
         except AttributeError:
-            print('Line {}: {} not parsed'.format(total_count, line))
+            if debug:
+                print('Line {}: {} not parsed'.format(total_count, line))
+        if total_count % 1000 == 0:
+            progress_bar(lines_count, total_count, parsed_count)
     methods = cm.send(None)
     timeline = ct.send(None)
     clients = cc.send(None)
     cm.close()
     ct.close()
     cc.close()
-    if out_json_file:
-        with open(out_json_file, 'w') as ojf:
-            json_timeline = {}
-            for tm in timeline.keys():
-                json_timeline[date_to_json(tm)] = timeline[tm]
-            json.dump({
-                "total_count": total_count,
-                "parsed_count": parsed_count,
-                "methods": methods,
-                "timeline": json_timeline,
-                "clients": clients
-            }, ojf)
+    return {
+        "total_count": total_count,
+        "parsed_count": parsed_count,
+        "methods": methods,
+        "timeline": timeline,
+        "clients": clients
+    }
 
 
-parse(**{'log_file': "test.log", 'out_json_file': "out.json"})
+def date_to_json(obj):
+    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
+
+
+def dump_data_to_json(data, json_file):
+    for dt in list(data["timeline"].keys()):
+        data["timeline"][date_to_json(dt)] = data["timeline"][dt]
+        del data["timeline"][dt]
+    with open(json_file, 'w') as jf:
+        json.dump(data, jf)
+
+
+def main():
+    arguments = ArgumentParser(
+        description='using log format: \'$remote_addr - [$time_local] "$host" "$request" '
+                    '$status ($bytes_sent) "$http_referer" '
+                    '"$uri $args" [$request_time] [$upstream_response_time]\'',
+        # epilog='version = {}'.format(__version__)
+    )
+    arguments.add_argument("log_file", help='NGINX log file with defined format')
+    arguments.add_argument("out_json_report", help='Write report to json file')
+    arguments.add_argument("--debug", "-D", action='count', help='Print not parsed lines')
+    args = arguments.parse_args()
+    data = parse(args.log_file, args.debug)
+    dump_data_to_json(data, args.out_json_report)
+
+
+if __name__ == "__main__":
+    main()
