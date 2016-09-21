@@ -93,6 +93,17 @@ def count_clients():
         yield clients
 
 
+def grep_upstream(value):
+    print("Grep lines where upstream_time >= {}".format(value))
+    while True:
+        d = (yield)
+        try:
+            if float(d['upstream_time']) >= value:
+                print(d)
+        except ValueError:
+            pass
+
+
 def progress_bar(total, current, parsed):
     sys.stdout.write('\rTotal: {}\tCurrent: {} ({}%)\tParsed: {} ({}%)'.format(
         total,
@@ -104,7 +115,7 @@ def progress_bar(total, current, parsed):
     sys.stdout.flush()
 
 
-def parse(log_file, debug=False, uri=False, time=False, clients=False, log_format=log_format):
+def parse(log_file, debug=False, uri=False, time=False, clients=False, grep=False, log_format=log_format):
     lines_count = sum(1 for l in open(log_file))
 
     lines = read_file_line(log_file)
@@ -127,6 +138,10 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, log_forma
         cc = count_clients()
         next(cc)
 
+    if grep:
+        gu = grep_upstream(grep)
+        next(gu)
+
     for line in lines:
         m = re.match(log_format, line)
         total_count += 1
@@ -143,11 +158,14 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, log_forma
             if clients:
                 cc.send(parsed_line)
 
+            if grep:
+                gu.send(parsed_line)
+
         except AttributeError:
             if debug:
                 print('Line {} not parsed: {} '.format(total_count, line))
 
-        if total_count % 1000 == 0:
+        if total_count % 1000 == 0 and not grep:
             progress_bar(lines_count, total_count, parsed_count)
 
     if uri:
@@ -161,6 +179,9 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, log_forma
     if clients:
         clients_ip = cc.send(None)
         cc.close()
+
+    if grep:
+        gu.close()
 
     return {
         "total_count": total_count,
@@ -188,11 +209,13 @@ def main():
     arguments.add_argument("--uri", "-u", action='count', help='Get uri-based report')
     arguments.add_argument("--time", "-t", action='count', help='Get time-based report')
     arguments.add_argument("--clients", "-c", action='count', help='Get client-based report')
+    arguments.add_argument("--grep", "-g", action='store', type=float,
+                           help='Grep lines where upstream_time more than the specified')
     arguments.add_argument("--debug", "-D", action='count', help='Print not parsed lines')
     args = arguments.parse_args()
-    if not any([args.uri, args.time, args.clients]):
+    if not any([args.uri, args.time, args.clients, args.grep]):
         print("You didn't choised parsing parameters")
-    data = parse(args.log_file, args.debug, args.uri, args.time, args.clients)
+    data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
     dump_data_to_json(data, args.out_json_report)
 
 
