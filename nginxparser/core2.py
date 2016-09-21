@@ -212,7 +212,7 @@ def dump_data_to_json(data, json_file):
 
 
 def print_report(data):
-    pass
+    print("TO DO REPORT")
 
 
 def main():
@@ -222,14 +222,15 @@ def main():
                     '"$uri $args" [$request_time] [$upstream_response_time]\'',
         # epilog='version = {}'.format(__version__)
     )
-    arguments.add_argument("log_file", help='NGINX log file with defined format')
-    arguments.add_argument("--uri", "-u", action='count', help='Get uri-based report')
-    arguments.add_argument("--time", "-t", action='count', help='Get time-based report')
-    arguments.add_argument("--clients", "-c", action='count', help='Get client-based report')
-    arguments.add_argument("--grep", "-g", action='store', type=float,
-                           help='Grep lines where upstream_time more than the specified')
-    arguments.add_argument("--dump", "-d", action='store', help='Export parsed data to json.file')
-    arguments.add_argument("--debug", "-D", action='count', help='Print not parsed lines')
+    arguments.add_argument("log_file", help="NGINX log file, with defined format")
+    arguments.add_argument("--uri", "-u", action="count", help="Get uri-based report")
+    arguments.add_argument("--time", "-t", action="count", help="Get time-based report")
+    arguments.add_argument("--clients", "-c", action="count", help="Get client-based report")
+    arguments.add_argument("--grep", "-g", action="store", type=float,
+                           help="Grep lines, where 'upstream_time' more than the specified")
+    arguments.add_argument("--dump", "-d", action="store", help="Export parsed data to the json.file")
+    arguments.add_argument("--no_report", "-N", action="count", help="Don't print the report")
+    arguments.add_argument("--debug", "-D", action="count", help="Print not parsed lines")
     args = arguments.parse_args()
 
     if not any([args.uri, args.time, args.clients, args.grep]):
@@ -237,7 +238,8 @@ def main():
         exit()
 
     data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
-    print_report(data)
+    if not args.no_report:
+        print_report(data)
 
     if args.dump:
         dump_data_to_json(data, args.dump)
