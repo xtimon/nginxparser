@@ -1,1 +1,245 @@
-{"timeline": {"2016-09-15T12:48:00": {"401": 1}, "2016-09-15T13:06:00": {"502": 1}, "2016-09-15T12:54:00": {"401": 1, "200": 1, "304": 1}, "2016-09-15T11:47:00": {"400": 1}, "2016-09-15T10:50:00": {"200": 1}, "2016-09-15T11:28:00": {"404": 1}, "2016-09-15T12:49:00": {"401": 1, "304": 1}, "2016-09-15T10:40:00": {"400": 1}, "2016-09-15T11:16:00": {"404": 1}, "2016-09-15T11:02:00": {"400": 1}, "2016-09-15T11:46:00": {"404": 1}, "2016-09-15T11:49:00": {"400": 1}, "2016-09-15T12:53:00": {"404": 1}, "2016-09-15T12:52:00": {"401": 1}, "2016-09-15T10:52:00": {"400": 1}, "2016-09-15T13:10:00": {"400": 1}, "2016-09-15T10:47:00": {"200": 1, "304": 1}, "2016-09-15T11:03:00": {"400": 1}, "2016-09-15T13:26:00": {"401": 1}, "2016-09-15T09:17:00": {"200": 1}, "2016-09-15T12:50:00": {"200": 1, "304": 1}, "2016-09-15T10:45:00": {"400": 1}, "2016-09-15T11:48:00": {"200": 1}, "2016-09-15T11:25:00": {"499": 1, "200": 1}, "2016-09-15T13:03:00": {"400": 1}, "2016-09-15T13:02:00": {"200": 3, "304": 1}, "2016-09-15T10:57:00": {"200": 1}, "2016-09-15T10:54:00": {"400": 1}, "2016-09-15T11:04:00": {"404": 1}, "2016-09-15T12:56:00": {"401": 1}, "2016-09-15T13:04:00": {"400": 1}, "2016-09-15T13:24:00": {"200": 3, "304": 1}, "2016-09-15T12:57:00": {"401": 1}}, "methods": {"DELETE": {"/api/trac/some_items/%d": {"bytes_sent": 5319, "request_time": 44.289, "upstream_time": 0.355, "responded": 5, "count": 9, "status": {"400": 4, "200": 1, "404": 4}}}, "GET": {"/api/trac/tracs/%d": {"bytes_sent": 2796, "request_time": 0.076, "upstream_time": 0.076, "responded": 1, "count": 1, "status": {"200": 1}}, "/": {"bytes_sent": 21578, "request_time": 11.448, "upstream_time": 0.44800000000000006, "responded": 7, "count": 8, "status": {"400": 1, "200": 7}}, "/api/public/examples/testing": {"bytes_sent": 0, "request_time": 10.946, "upstream_time": 0, "responded": 0, "count": 1, "status": {"400": 1}}, "/api/comments": {"bytes_sent": 2790, "request_time": 4.671, "upstream_time": 4.671, "responded": 3, "count": 3, "status": {"304": 3}}, "/api/messages/someurl/count_of_unread": {"bytes_sent": 2911, "request_time": 2.0789999999999997, "upstream_time": 1.7319999999999998, "responded": 3, "count": 4, "status": {"499": 1, "200": 1, "304": 2}}, "/buyouts/%d": {"bytes_sent": 166101, "request_time": 2.221, "upstream_time": 2.221, "responded": 3, "count": 3, "status": {"200": 3}}, "/favicon.ico": {"bytes_sent": 112, "request_time": 0.001, "upstream_time": 0.001, "responded": 1, "count": 1, "status": {"304": 1}}}, "POST": {"/buyouts/%d": {"bytes_sent": 463, "request_time": 0.774, "upstream_time": 0.773, "responded": 1, "count": 1, "status": {"404": 1}}, "/api/trac/some_items": {"bytes_sent": 8399, "request_time": 7.08, "upstream_time": 6.4879999999999995, "responded": 14, "count": 14, "status": {"400": 5, "502": 1, "401": 7, "200": 1}}}}, "total_count": 91, "clients": {"192.168.21.124": {"responded": 3, "responded_request_time": 0.368, "total_count": 4, "total_request_time": 0.715, "upstream_time": 0.368}, "192.168.21.161": {"responded": 35, "responded_request_time": 17.044, "total_count": 41, "total_request_time": 82.86999999999999, "upstream_time": 16.397000000000002}}, "parsed_count": 90}
+{
+  "timeline": {
+    "15/Sep/2016:11:16": {
+      "404": 1
+    },
+    "15/Sep/2016:12:49": {
+      "304": 1,
+      "401": 1
+    },
+    "15/Sep/2016:10:52": {
+      "400": 1
+    },
+    "15/Sep/2016:11:47": {
+      "400": 1
+    },
+    "15/Sep/2016:11:49": {
+      "400": 1
+    },
+    "15/Sep/2016:10:47": {
+      "304": 1,
+      "200": 1
+    },
+    "15/Sep/2016:12:52": {
+      "401": 1
+    },
+    "15/Sep/2016:13:04": {
+      "400": 1
+    },
+    "15/Sep/2016:11:25": {
+      "499": 1,
+      "200": 1
+    },
+    "15/Sep/2016:11:48": {
+      "200": 1
+    },
+    "15/Sep/2016:11:02": {
+      "400": 1
+    },
+    "15/Sep/2016:13:03": {
+      "400": 1
+    },
+    "15/Sep/2016:11:03": {
+      "400": 1
+    },
+    "15/Sep/2016:10:54": {
+      "400": 1
+    },
+    "15/Sep/2016:12:48": {
+      "401": 1
+    },
+    "15/Sep/2016:13:26": {
+      "401": 1
+    },
+    "15/Sep/2016:13:10": {
+      "400": 1
+    },
+    "15/Sep/2016:12:50": {
+      "304": 1,
+      "200": 1
+    },
+    "15/Sep/2016:11:28": {
+      "404": 1
+    },
+    "15/Sep/2016:12:54": {
+      "401": 1,
+      "200": 1,
+      "304": 1
+    },
+    "15/Sep/2016:12:56": {
+      "401": 1
+    },
+    "15/Sep/2016:12:57": {
+      "401": 1
+    },
+    "15/Sep/2016:10:57": {
+      "200": 1
+    },
+    "15/Sep/2016:13:06": {
+      "502": 1
+    },
+    "15/Sep/2016:09:17": {
+      "200": 1
+    },
+    "15/Sep/2016:10:50": {
+      "200": 1
+    },
+    "15/Sep/2016:13:24": {
+      "304": 1,
+      "200": 3
+    },
+    "15/Sep/2016:10:40": {
+      "400": 1
+    },
+    "15/Sep/2016:12:53": {
+      "404": 1
+    },
+    "15/Sep/2016:10:45": {
+      "400": 1
+    },
+    "15/Sep/2016:11:46": {
+      "404": 1
+    },
+    "15/Sep/2016:13:02": {
+      "304": 1,
+      "200": 3
+    },
+    "15/Sep/2016:11:04": {
+      "404": 1
+    }
+  },
+  "total_count": 91,
+  "methods": {
+    "GET": {
+      "/": {
+        "responded": 7,
+        "bytes_sent": 21578,
+        "count": 8,
+        "upstream_time": 0.44800000000000006,
+        "status": {
+          "200": 7,
+          "400": 1
+        },
+        "request_time": 11.448
+      },
+      "/buyouts/%d": {
+        "responded": 3,
+        "bytes_sent": 166101,
+        "count": 3,
+        "upstream_time": 2.221,
+        "status": {
+          "200": 3
+        },
+        "request_time": 2.221
+      },
+      "/api/public/examples/testing": {
+        "responded": 0,
+        "bytes_sent": 0,
+        "count": 1,
+        "upstream_time": 0,
+        "status": {
+          "400": 1
+        },
+        "request_time": 10.946
+      },
+      "/favicon.ico": {
+        "responded": 1,
+        "bytes_sent": 112,
+        "count": 1,
+        "upstream_time": 0.001,
+        "status": {
+          "304": 1
+        },
+        "request_time": 0.001
+      },
+      "/api/trac/tracs/%d": {
+        "responded": 1,
+        "bytes_sent": 2796,
+        "count": 1,
+        "upstream_time": 0.076,
+        "status": {
+          "200": 1
+        },
+        "request_time": 0.076
+      },
+      "/api/comments": {
+        "responded": 3,
+        "bytes_sent": 2790,
+        "count": 3,
+        "upstream_time": 4.671,
+        "status": {
+          "304": 3
+        },
+        "request_time": 4.671
+      },
+      "/api/messages/someurl/count_of_unread": {
+        "responded": 3,
+        "bytes_sent": 2911,
+        "count": 4,
+        "upstream_time": 1.7319999999999998,
+        "status": {
+          "499": 1,
+          "200": 1,
+          "304": 2
+        },
+        "request_time": 2.0789999999999997
+      }
+    },
+    "POST": {
+      "/buyouts/%d": {
+        "responded": 1,
+        "bytes_sent": 463,
+        "count": 1,
+        "upstream_time": 0.773,
+        "status": {
+          "404": 1
+        },
+        "request_time": 0.774
+      },
+      "/api/trac/some_items": {
+        "responded": 14,
+        "bytes_sent": 8399,
+        "count": 14,
+        "upstream_time": 6.4879999999999995,
+        "status": {
+          "401": 7,
+          "502": 1,
+          "200": 1,
+          "400": 5
+        },
+        "request_time": 7.08
+      }
+    },
+    "DELETE": {
+      "/api/trac/some_items/%d": {
+        "responded": 5,
+        "bytes_sent": 5319,
+        "count": 9,
+        "upstream_time": 0.355,
+        "status": {
+          "200": 1,
+          "400": 4,
+          "404": 4
+        },
+        "request_time": 44.289
+      }
+    }
+  },
+  "parsed_count": 90,
+  "clients": {
+    "192.168.21.161": {
+      "responded_request_time": 17.044,
+      "total_count": 41,
+      "total_request_time": 82.86999999999999,
+      "upstream_time": 16.397000000000002,
+      "responded": 35
+    },
+    "192.168.21.124": {
+      "responded_request_time": 0.368,
+      "total_count": 4,
+      "total_request_time": 0.715,
+      "upstream_time": 0.368,
+      "responded": 3
+    }
+  }
+}

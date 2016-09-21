@@ -94,12 +94,25 @@ def count_clients():
 
 
 def grep_upstream(value):
-    print("Grep lines where upstream_time >= {}".format(value))
+    print("Grep lines where upstream_time >= {}\n".format(value))
     while True:
         d = (yield)
         try:
             if float(d['upstream_time']) >= value:
-                print(d)
+                print('{} - [{}] "{}" "{} {}" {} ({}) "{}" "{} {}" [{}] [{}]'.format(
+                    d['remote_addr'],
+                    d['local_time'],
+                    d['host'],
+                    d['method'],
+                    d['request'],
+                    d['status'],
+                    d['bytes_sent'],
+                    d['http_referer'],
+                    d['uri'],
+                    d['args'],
+                    d['request_time'],
+                    d['upstream_time']
+                ))
         except ValueError:
             pass
 
@@ -205,18 +218,20 @@ def main():
         # epilog='version = {}'.format(__version__)
     )
     arguments.add_argument("log_file", help='NGINX log file with defined format')
-    arguments.add_argument("out_json_report", help='Write report to json file')
     arguments.add_argument("--uri", "-u", action='count', help='Get uri-based report')
     arguments.add_argument("--time", "-t", action='count', help='Get time-based report')
     arguments.add_argument("--clients", "-c", action='count', help='Get client-based report')
     arguments.add_argument("--grep", "-g", action='store', type=float,
                            help='Grep lines where upstream_time more than the specified')
+    arguments.add_argument("--dump", "-d", action='store', help='Export parsed data to json.file')
     arguments.add_argument("--debug", "-D", action='count', help='Print not parsed lines')
     args = arguments.parse_args()
     if not any([args.uri, args.time, args.clients, args.grep]):
         print("You didn't choised parsing parameters")
+        exit()
     data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
-    dump_data_to_json(data, args.out_json_report)
+    if args.dump:
+        dump_data_to_json(data, args.dump)
 
 
 if __name__ == "__main__":
