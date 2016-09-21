@@ -104,43 +104,70 @@ def progress_bar(total, current, parsed):
     sys.stdout.flush()
 
 
-def parse(log_file, debug=False, log_format=log_format):
+def parse(log_file, debug=False, uri=False, time=False, clients=False, log_format=log_format):
     lines_count = sum(1 for l in open(log_file))
+
     lines = read_file_line(log_file)
+
     total_count = 0
     parsed_count = 0
-    cm = count_methods()
-    ct = count_timeline()
-    cc = count_clients()
-    next(cm)
-    next(ct)
-    next(cc)
+    methods = {}
+    timeline={}
+    clients_ip={}
+
+    if uri:
+        cm = count_methods()
+        next(cm)
+
+    if time:
+        ct = count_timeline()
+        next(ct)
+
+    if clients:
+        cc = count_clients()
+        next(cc)
+
     for line in lines:
         m = re.match(log_format, line)
         total_count += 1
         try:
             parsed_line = m.groupdict()
             parsed_count += 1
-            cm.send(parsed_line)
-            ct.send(parsed_line)
-            cc.send(parsed_line)
+
+            if uri:
+                cm.send(parsed_line)
+
+            if time:
+                ct.send(parsed_line)
+
+            if clients:
+                cc.send(parsed_line)
+
         except AttributeError:
             if debug:
-                print('Line {}: {} not parsed'.format(total_count, line))
+                print('Line {} not parsed: {} '.format(total_count, line))
+
         if total_count % 1000 == 0:
             progress_bar(lines_count, total_count, parsed_count)
-    methods = cm.send(None)
-    timeline = ct.send(None)
-    clients = cc.send(None)
-    cm.close()
-    ct.close()
-    cc.close()
+
+    if uri:
+        methods = cm.send(None)
+        cm.close()
+
+    if time:
+        timeline = ct.send(None)
+        ct.close()
+
+    if clients:
+        clients_ip = cc.send(None)
+        cc.close()
+
     return {
         "total_count": total_count,
         "parsed_count": parsed_count,
         "methods": methods,
         "timeline": timeline,
-        "clients": clients
+        "clients": clients_ip
     }
 
 
@@ -149,9 +176,10 @@ def date_to_json(obj):
 
 
 def dump_data_to_json(data, json_file):
-    for dt in list(data["timeline"].keys()):
-        data["timeline"][date_to_json(dt)] = data["timeline"][dt]
-        del data["timeline"][dt]
+    if data["timeline"] != {}:
+        for dt in list(data["timeline"].keys()):
+            data["timeline"][date_to_json(dt)] = data["timeline"][dt]
+            del data["timeline"][dt]
     with open(json_file, 'w') as jf:
         json.dump(data, jf)
 
@@ -165,9 +193,14 @@ def main():
     )
     arguments.add_argument("log_file", help='NGINX log file with defined format')
     arguments.add_argument("out_json_report", help='Write report to json file')
+    arguments.add_argument("--uri", "-u", action='count', help='Get uri-based report')
+    arguments.add_argument("--time", "-t", action='count', help='Get time-based report')
+    arguments.add_argument("--clients", "-c", action='count', help='Get client-based report')
     arguments.add_argument("--debug", "-D", action='count', help='Print not parsed lines')
     args = arguments.parse_args()
-    data = parse(args.log_file, args.debug)
+    if not any([args.uri, args.time, args.clients]):
+        print("You didn't choised parsing parameters")
+    data = parse(args.log_file, args.debug, args.uri, args.time, args.clients)
     dump_data_to_json(data, args.out_json_report)
 
 
