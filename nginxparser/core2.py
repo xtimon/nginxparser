@@ -208,6 +208,11 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, grep=Fals
 def dump_data_to_json(data, json_file):
     with open(json_file, 'w') as jf:
         json.dump(data, jf)
+        print("dump exported")
+
+
+def print_report(data):
+    pass
 
 
 def main():
@@ -226,10 +231,14 @@ def main():
     arguments.add_argument("--dump", "-d", action='store', help='Export parsed data to json.file')
     arguments.add_argument("--debug", "-D", action='count', help='Print not parsed lines')
     args = arguments.parse_args()
+
     if not any([args.uri, args.time, args.clients, args.grep]):
         print("You didn't choised parsing parameters")
         exit()
+
     data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
+    print_report(data)
+
     if args.dump:
         dump_data_to_json(data, args.dump)
 
