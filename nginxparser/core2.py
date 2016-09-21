@@ -56,7 +56,7 @@ def count_timeline():
     while True:
         d = (yield)
         if d:
-            timestamp = datetime.strptime(d['local_time'][:-9], '%d/%b/%Y:%H:%M')
+            timestamp = d['local_time'][:-9]
             status = d['status']
             timeline[timestamp] = timeline.get(timestamp, {})
             timeline[timestamp][status] = timeline[timestamp].get(status, 0) + 1
@@ -171,15 +171,7 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, log_forma
     }
 
 
-def date_to_json(obj):
-    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
-
-
 def dump_data_to_json(data, json_file):
-    if data["timeline"] != {}:
-        for dt in list(data["timeline"].keys()):
-            data["timeline"][date_to_json(dt)] = data["timeline"][dt]
-            del data["timeline"][dt]
     with open(json_file, 'w') as jf:
         json.dump(data, jf)
 
