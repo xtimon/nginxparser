@@ -1,159 +1,147 @@
 {
-  "total_count": 91,
-  "parsed_count": 90,
-  "clients": {
-    "192.168.21.161": {
-      "total_count": 41,
-      "total_request_time": 82.86999999999999,
-      "responded_request_time": 17.044,
-      "responded": 35,
-      "upstream_time": 16.397000000000002
-    },
-    "192.168.21.124": {
-      "total_count": 4,
-      "total_request_time": 0.715,
-      "responded_request_time": 0.368,
-      "responded": 3,
-      "upstream_time": 0.368
-    }
-  },
   "methods": {
     "POST": {
+      "/api/trac/some_items": {
+        "upstream_time": 6.4879999999999995,
+        "responded": 14,
+        "bytes_sent": 8399,
+        "request_time": 7.08,
+        "status": {
+          "401": 7,
+          "400": 5,
+          "200": 1,
+          "502": 1
+        },
+        "count": 14
+      },
       "/buyouts/%d": {
-        "request_time": 0.774,
         "upstream_time": 0.773,
-        "bytes_sent": 463,
-        "count": 1,
         "responded": 1,
+        "bytes_sent": 463,
+        "request_time": 0.774,
         "status": {
           "404": 1
-        }
-      },
-      "/api/trac/some_items": {
-        "request_time": 7.08,
-        "upstream_time": 6.4879999999999995,
-        "bytes_sent": 8399,
-        "count": 14,
-        "responded": 14,
-        "status": {
-          "200": 1,
-          "401": 7,
-          "502": 1,
-          "400": 5
-        }
+        },
+        "count": 1
       }
     },
     "GET": {
-      "/api/trac/tracs/%d": {
-        "request_time": 0.076,
-        "upstream_time": 0.076,
-        "bytes_sent": 2796,
-        "count": 1,
-        "responded": 1,
-        "status": {
-          "200": 1
-        }
-      },
-      "/buyouts/%d": {
-        "request_time": 2.221,
-        "upstream_time": 2.221,
-        "bytes_sent": 166101,
-        "count": 3,
+      "/api/comments": {
+        "upstream_time": 4.671,
         "responded": 3,
+        "bytes_sent": 2790,
+        "request_time": 4.671,
         "status": {
-          "200": 3
-        }
+          "304": 3
+        },
+        "count": 3
+      },
+      "/api/messages/someurl/count_of_unread": {
+        "upstream_time": 1.7319999999999998,
+        "responded": 3,
+        "bytes_sent": 2911,
+        "request_time": 2.0789999999999997,
+        "status": {
+          "200": 1,
+          "499": 1,
+          "304": 2
+        },
+        "count": 4
       },
       "/": {
-        "request_time": 11.448,
         "upstream_time": 0.44800000000000006,
-        "bytes_sent": 21578,
-        "count": 8,
         "responded": 7,
+        "bytes_sent": 21578,
+        "request_time": 11.448,
         "status": {
           "200": 7,
           "400": 1
-        }
+        },
+        "count": 8
+      },
+      "/buyouts/%d": {
+        "upstream_time": 2.221,
+        "responded": 3,
+        "bytes_sent": 166101,
+        "request_time": 2.221,
+        "status": {
+          "200": 3
+        },
+        "count": 3
       },
       "/favicon.ico": {
-        "request_time": 0.001,
         "upstream_time": 0.001,
-        "bytes_sent": 112,
-        "count": 1,
         "responded": 1,
+        "bytes_sent": 112,
+        "request_time": 0.001,
         "status": {
           "304": 1
-        }
+        },
+        "count": 1
+      },
+      "/api/trac/tracs/%d": {
+        "upstream_time": 0.076,
+        "responded": 1,
+        "bytes_sent": 2796,
+        "request_time": 0.076,
+        "status": {
+          "200": 1
+        },
+        "count": 1
       },
       "/api/public/examples/testing": {
-        "request_time": 10.946,
         "upstream_time": 0,
-        "bytes_sent": 0,
-        "count": 1,
         "responded": 0,
+        "bytes_sent": 0,
+        "request_time": 10.946,
         "status": {
           "400": 1
-        }
-      },
-      "/api/messages/someurl/count_of_unread": {
-        "request_time": 2.0789999999999997,
-        "upstream_time": 1.7319999999999998,
-        "bytes_sent": 2911,
-        "count": 4,
-        "responded": 3,
-        "status": {
-          "304": 2,
-          "200": 1,
-          "499": 1
-        }
-      },
-      "/api/comments": {
-        "request_time": 4.671,
-        "upstream_time": 4.671,
-        "bytes_sent": 2790,
-        "count": 3,
-        "responded": 3,
-        "status": {
-          "304": 3
-        }
+        },
+        "count": 1
       }
     },
     "DELETE": {
       "/api/trac/some_items/%d": {
-        "request_time": 44.289,
         "upstream_time": 0.355,
-        "bytes_sent": 5319,
-        "count": 9,
         "responded": 5,
+        "bytes_sent": 5319,
+        "request_time": 44.289,
         "status": {
-          "404": 4,
           "200": 1,
-          "400": 4
-        }
+          "400": 4,
+          "404": 4
+        },
+        "count": 9
       }
     }
   },
+  "total_count": 91,
   "timeline": {
-    "15/Sep/2016:11:04": {
-      "404": 1
-    },
-    "15/Sep/2016:11:02": {
-      "400": 1
-    },
-    "15/Sep/2016:13:06": {
-      "502": 1
-    },
-    "15/Sep/2016:10:50": {
+    "15/Sep/2016:09:17": {
       "200": 1
     },
-    "15/Sep/2016:10:45": {
+    "15/Sep/2016:11:46": {
+      "404": 1
+    },
+    "15/Sep/2016:12:53": {
+      "404": 1
+    },
+    "15/Sep/2016:13:24": {
+      "200": 3,
+      "304": 1
+    },
+    "15/Sep/2016:11:49": {
       "400": 1
     },
-    "15/Sep/2016:13:10": {
+    "15/Sep/2016:10:54": {
       "400": 1
     },
     "15/Sep/2016:11:28": {
       "404": 1
+    },
+    "15/Sep/2016:12:49": {
+      "401": 1,
+      "304": 1
     },
     "15/Sep/2016:12:52": {
       "401": 1
@@ -161,85 +149,97 @@
     "15/Sep/2016:12:57": {
       "401": 1
     },
-    "15/Sep/2016:13:03": {
-      "400": 1
+    "15/Sep/2016:12:54": {
+      "401": 1,
+      "200": 1,
+      "304": 1
     },
-    "15/Sep/2016:10:40": {
-      "400": 1
-    },
-    "15/Sep/2016:11:48": {
+    "15/Sep/2016:10:57": {
       "200": 1
-    },
-    "15/Sep/2016:13:26": {
-      "401": 1
-    },
-    "15/Sep/2016:10:54": {
-      "400": 1
-    },
-    "15/Sep/2016:11:03": {
-      "400": 1
-    },
-    "15/Sep/2016:12:48": {
-      "401": 1
-    },
-    "15/Sep/2016:12:53": {
-      "404": 1
-    },
-    "15/Sep/2016:12:49": {
-      "304": 1,
-      "401": 1
-    },
-    "15/Sep/2016:11:47": {
-      "400": 1
-    },
-    "15/Sep/2016:10:47": {
-      "304": 1,
-      "200": 1
-    },
-    "15/Sep/2016:13:02": {
-      "304": 1,
-      "200": 3
-    },
-    "15/Sep/2016:13:24": {
-      "304": 1,
-      "200": 3
     },
     "15/Sep/2016:11:25": {
       "200": 1,
       "499": 1
     },
-    "15/Sep/2016:12:54": {
-      "304": 1,
-      "200": 1,
-      "401": 1
-    },
-    "15/Sep/2016:10:52": {
+    "15/Sep/2016:11:47": {
       "400": 1
     },
-    "15/Sep/2016:11:46": {
+    "15/Sep/2016:10:45": {
+      "400": 1
+    },
+    "15/Sep/2016:12:56": {
+      "401": 1
+    },
+    "15/Sep/2016:11:03": {
+      "400": 1
+    },
+    "15/Sep/2016:10:47": {
+      "200": 1,
+      "304": 1
+    },
+    "15/Sep/2016:13:02": {
+      "200": 3,
+      "304": 1
+    },
+    "15/Sep/2016:12:48": {
+      "401": 1
+    },
+    "15/Sep/2016:11:04": {
       "404": 1
     },
     "15/Sep/2016:11:16": {
       "404": 1
     },
-    "15/Sep/2016:12:56": {
-      "401": 1
-    },
-    "15/Sep/2016:11:49": {
+    "15/Sep/2016:11:02": {
       "400": 1
     },
-    "15/Sep/2016:10:57": {
+    "15/Sep/2016:11:48": {
       "200": 1
+    },
+    "15/Sep/2016:13:10": {
+      "400": 1
+    },
+    "15/Sep/2016:10:40": {
+      "400": 1
+    },
+    "15/Sep/2016:13:26": {
+      "401": 1
+    },
+    "15/Sep/2016:13:03": {
+      "400": 1
+    },
+    "15/Sep/2016:10:50": {
+      "200": 1
+    },
+    "15/Sep/2016:12:50": {
+      "200": 1,
+      "304": 1
     },
     "15/Sep/2016:13:04": {
       "400": 1
     },
-    "15/Sep/2016:12:50": {
-      "304": 1,
-      "200": 1
+    "15/Sep/2016:13:06": {
+      "502": 1
     },
-    "15/Sep/2016:09:17": {
-      "200": 1
+    "15/Sep/2016:10:52": {
+      "400": 1
     }
-  }
+  },
+  "clients": {
+    "192.168.21.124": {
+      "total_count": 4,
+      "upstream_time": 0.368,
+      "responded": 3,
+      "responded_request_time": 0.368,
+      "total_request_time": 0.715
+    },
+    "192.168.21.161": {
+      "total_count": 41,
+      "upstream_time": 16.397000000000002,
+      "responded": 35,
+      "responded_request_time": 17.044,
+      "total_request_time": 82.86999999999999
+    }
+  },
+  "parsed_count": 90
 }

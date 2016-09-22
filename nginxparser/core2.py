@@ -212,7 +212,49 @@ def dump_data_to_json(data, json_file):
 
 
 def print_report(data):
-    print("TO DO REPORT")
+    print("\n\nParsed {} from {} lines".format(data["parsed_count"], data["total_count"]))
+
+    if data["methods"]:
+        for method in data["methods"].keys():
+            print("\n{0} {1} {0}".format((38 - len(method) // 2) * "=", method))
+            print("Count\tResponded\tRequestTime\tAvgReqTime\tUpstreamTime\tAvgUpstrTime\tBytesSent\tAvgBytSent\tStatusCount\tUri")
+            m_count = 0
+            m_responded = 0
+            m_request_time = 0
+            m_upstream_time = 0
+            m_bytes_sent = 0
+            m_status = {}
+            for uri in data["methods"][method].keys():
+                count = data["methods"][method][uri]["count"]
+                responded = data["methods"][method][uri]["responded"]
+                request_time = data["methods"][method][uri]["request_time"]
+                upstream_time = data["methods"][method][uri]["upstream_time"]
+                bytes_sent = data["methods"][method][uri]["bytes_sent"]
+                m_count += count
+                m_responded += responded
+                m_request_time += request_time
+                m_upstream_time += upstream_time
+                m_bytes_sent += bytes_sent
+                status_line = ""
+                for status in data["methods"][method][uri]["status"].keys():
+                    s_count = data["methods"][method][uri]["status"][status]
+                    m_status[status] = m_status.get(status, 0) + s_count
+                    status_line += "\t{}: {}".format(status, s_count)
+                try:
+                    avg_upstream_time = upstream_time / responded
+                except ZeroDivisionError:
+                    avg_upstream_time = 0
+                line = "{}\t{}\t{:0.2f}\t{:0.2f}\t{:0.2f}\t{:0.2f}\t{}\t{:0.0f}\t".format(
+                    count,
+                    responded,
+                    request_time,
+                    request_time / count,
+                    upstream_time,
+                    avg_upstream_time,
+                    bytes_sent,
+                    bytes_sent / count
+                )
+                print("{}{}\t{}".format(line, status_line, uri))
 
 
 def main():
