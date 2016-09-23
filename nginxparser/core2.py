@@ -216,8 +216,19 @@ def print_report(data):
 
     if data["methods"]:
         for method in data["methods"].keys():
-            print("\n{0} {1} {0}".format((38 - len(method) // 2) * "=", method))
-            print("Count\tResponded\tRequestTime\tAvgReqTime\tUpstreamTime\tAvgUpstrTime\tBytesSent\tAvgBytSent\tStatusCount\tUri")
+            print("\n{0} {1} {0}".format((78 - len(method) // 2) * "=", method))
+            print("{:>10}\t{:>10}\t{:>10}\t{:>5}\t{:>10}\t{:>5}\t{:>12}\t{:>5}\t{:<30}\t{:<}".format(
+                "Count",
+                "Responded",
+                "ReqTime",
+                "AvgRT",
+                "UpstTime",
+                "AvgUT",
+                "Bytes",
+                "AvgB",
+                "Uri",
+                "StatusCount"
+            ))
             m_count = 0
             m_responded = 0
             m_request_time = 0
@@ -235,16 +246,16 @@ def print_report(data):
                 m_request_time += request_time
                 m_upstream_time += upstream_time
                 m_bytes_sent += bytes_sent
-                status_line = ""
+                status_line = "["
                 for status in data["methods"][method][uri]["status"].keys():
                     s_count = data["methods"][method][uri]["status"][status]
                     m_status[status] = m_status.get(status, 0) + s_count
-                    status_line += "\t{}: {}".format(status, s_count)
+                    status_line += "{}:{}, ".format(status, s_count)
                 try:
                     avg_upstream_time = upstream_time / responded
                 except ZeroDivisionError:
                     avg_upstream_time = 0
-                line = "{}\t{}\t{:0.2f}\t{:0.2f}\t{:0.2f}\t{:0.2f}\t{}\t{:0.0f}\t".format(
+                line = "{:>10}\t{:>10}\t{:>10.2f}\t{:>5.2f}\t{:>10.2f}\t{:>5.2f}\t{:>12}\t{:>5.0f}\t{:<30}\t{:<}".format(
                     count,
                     responded,
                     request_time,
@@ -252,9 +263,11 @@ def print_report(data):
                     upstream_time,
                     avg_upstream_time,
                     bytes_sent,
-                    bytes_sent / count
+                    bytes_sent / count,
+                    uri,
+                    status_line[:-2] + "]"
                 )
-                print("{}{}\t{}".format(line, status_line, uri))
+                print(line)
 
 
 def main():
@@ -276,7 +289,7 @@ def main():
     args = arguments.parse_args()
 
     if not any([args.uri, args.time, args.clients, args.grep]):
-        print("You didn't choised parsing parameters")
+        print("You didn't choised a parsing parameters")
         exit()
 
     data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
