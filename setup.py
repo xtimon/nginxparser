@@ -5,7 +5,7 @@ NAME = "nginxparser"
 DESCRIPTION = "Nginx log parser"
 AUTHOR = "Timur Isanov"
 AUTHOR_EMAIL = "tisanov@yahoo.com"
-URL = "https://github.com/xtimon/nginx_parser"
+URL = "https://github.com/xtimon/nginxparser"
 VERSION = __import__(PACKAGE).__version__
 
 setup(
@@ -18,6 +18,16 @@ setup(
     license="GPL",
     url=URL,
     packages=find_packages(),
+    classifiers=[
+        'Topic :: Internet :: Log Analysis',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+    ],
     entry_points={
         'console_scripts':
             ['nginxparser = nginxparser.core:main']

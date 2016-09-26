@@ -1,378 +1,326 @@
 #!/usr/bin/env python
+
+
+import re
+import json
 import sys
-from . import __version__
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
-from operator import itemgetter
-from os import path, popen
-from re import compile
+from .patterns import log_format
+from .__init__ import __version__
 
 
-def progress_bar(progress):
+def read_file_line(file_name):
+    with open(file_name, 'r') as f:
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            yield line
 
-    # The density of the progress bar
-    density = 2
 
-    # Getting the size of the console
-    rows, columns = popen('stty size', 'r').read().split()
-    if int(columns):
-        density = int(round(120 / int(columns) + 0.5))
-        if density == 0:
-            density = 1
-    sys.stdout.write('\r[{}{}] {}%'.
-                     format('#' * (progress // density), ' ' * (100 // density - progress // density), progress))
+def grep_upstream(value):
+    print("Grep lines where upstream_time >= {}\n".format(value))
+    while True:
+        d = (yield)
+        try:
+            if float(d['upstream_time']) >= value:
+                print('{} - [{}] "{}" "{} {}" {} ({}) "{}" "{} {}" [{}] [{}]'.format(
+                    d['remote_addr'],
+                    d['local_time'],
+                    d['host'],
+                    d['method'],
+                    d['request'],
+                    d['status'],
+                    d['bytes_sent'],
+                    d['http_referer'],
+                    d['uri'],
+                    d['args'],
+                    d['request_time'],
+                    d['upstream_time']
+                ))
+        except ValueError:
+            pass
+
+
+def progress_bar(total, current, parsed):
+    sys.stdout.write('\rTotal: {}\tCurrent: {} ({}%)\tParsed: {} ({}%)'.format(
+        total,
+        current,
+        current * 100 // total,
+        parsed,
+        parsed * 100 // total
+    ))
     sys.stdout.flush()
 
 
-def analyze_log(logfile, outfile, time, count, exclude, status_rep,
-                debug, median, remote, period, limit, difference):
+def parse(log_file, debug=False, uri=False, time=False, clients=False, grep=False, log_format=log_format):
+    lines_count = sum(1 for l in open(log_file))
 
-    # Creation of a regular expression for the format used
-    log_format = '([\d.]+) \- \[(.+)\] "([\w\.\-]+)" "([A-Z]+) ([\w\.\-\/]+).+" ' \
-                 '(\d{3}) \((\d+)\) "(.+)" ' \
-                 '"(.+) (.+)" \[([\d\.]+)] \[([\d\.-]+)]'
-    line_re = compile(log_format)
-    summary = {'by_types': {'Overall': 0},
-               'by_time': {'Overall': 0},
-               'by_status': {}}
-    time_total = {}
-    count_total = {}
-    if status_rep:
-        status_rep_time_dict = {}
-        status_rep_count_dict = {}
-        status_rep_timeline_dict = {}
-        for s in status_rep:
-            status_rep_count_dict[s] = {}
-            status_rep_time_dict[s] = {}
-    debug_rows = []
-    median_urls = {}
-    remote_host_report = {}
-    difference_report = {}
-    if period:
-        startdatetime = datetime.strptime(period[0], "%Y.%m.%d_%H:%M:%S")
-        stopdatetime = datetime.strptime(period[1], "%Y.%m.%d_%H:%M:%S")
-    lines_count = sum(1 for l in open(logfile))
-    percent = lines_count // 100
-    progress = 0
-    log_line_nu = 0
-    for log_line in open(logfile, 'r'):
-        log_line_nu += 1
+    lines = read_file_line(log_file)
+
+    total_count = 0
+    parsed_count = 0
+    methods = {}
+    timeline={}
+    clients_ip={}
+
+    if grep:
+        gu = grep_upstream(grep)
+        next(gu)
+
+    for line in lines:
+        m = re.match(log_format, line)
+        total_count += 1
         try:
-            if lines_count >= 100000:
-                if log_line_nu % percent == 0:
-                    progress += 1
-                    progress_bar(progress)
-            line_opts = line_re.findall(log_line)
-            if line_opts:
+            parsed_line = m.groupdict()
+            parsed_count += 1
 
-                # Get the values from a line
-                remote_addr = line_opts[0][0]
-                time_local =line_opts[0][1]
-                # host = line_opts[0][2]
-                request_type = line_opts[0][3]
-                request = line_opts[0][4]
-                status = line_opts[0][5]
-                # bytes_sent = line_opts[0][6]
-                # http_refferer = line_opts[0][7]
-                # uri = line_opts[0][8]
-                # args = line_opts[0][9]
-                request_time = float(line_opts[0][10])
-                if line_opts[0][11] == '-':
-                    upstream_response_time = request_time
-                else:
-                    upstream_response_time = float(line_opts[0][11])
+            pl_method = parsed_line['method']
+            pl_uri = re.sub('\d+', '%d', parsed_line['uri'])
+            pl_bytes = int(parsed_line['bytes_sent'])
+            pl_request_time = float(parsed_line['request_time'])
+            pl_status = parsed_line['status']
+            pl_timestamp = parsed_line['local_time'][:-9]
+            pl_remote_addr = parsed_line['remote_addr']
+            try:
+                pl_upstream_time = float(parsed_line['upstream_time'])
+                pl_responded = 1
+                pl_responded_request_time = pl_request_time
+            except ValueError:
+                pl_upstream_time = 0
+                pl_responded = 0
+                pl_responded_request_time = 0
 
-                stop = False
-                if exclude:
-                    for e in exclude:
-                        if e in request:
-                            stop = True
-                            break
-                if stop:
-                    continue
-                if period:
-                    no_tz_local_time = time_local[:-6]
-                    req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M:%S")
-                    if req_dt < startdatetime or req_dt > stopdatetime:
-                        continue
+            # Count methods
+            if uri:
+                methods[pl_method] = methods.get(pl_method, {})
+                methods[pl_method][pl_uri] = methods[pl_method].get(pl_uri, {
+                    "count": 0,
+                    "responded": 0,
+                    "bytes_sent": 0,
+                    "request_time": 0,
+                    "upstream_time": 0,
+                    "status": {}
+                })
+                methods[pl_method][pl_uri]["status"][pl_status] = methods[pl_method][pl_uri]["status"].get(pl_status, 0) + 1
+                methods[pl_method][pl_uri]["count"] += 1
+                methods[pl_method][pl_uri]["responded"] += pl_responded
+                methods[pl_method][pl_uri]["bytes_sent"] += pl_bytes
+                methods[pl_method][pl_uri]["request_time"] += pl_request_time
+                methods[pl_method][pl_uri]["upstream_time"] += pl_upstream_time
 
-                # Creation the summary
-                # By types
-                summary['by_types']['Overall'] += 1
-                if request_type in summary['by_types'].keys():
-                    summary['by_types'][request_type] += 1
-                else:
-                    summary['by_types'][request_type] = 1
+            # Count timeline
+            if time:
+                timeline[pl_timestamp] = timeline.get(pl_timestamp, {})
+                timeline[pl_timestamp][pl_status] = timeline[pl_timestamp].get(pl_status, 0) + 1
 
-                # By time
-                summary['by_time']['Overall'] += upstream_response_time
-                if request_type in summary['by_time'].keys():
-                    summary['by_time'][request_type] += upstream_response_time
-                else:
-                    summary['by_time'][request_type] = upstream_response_time
+            # Count clients
+            if clients:
+                clients_ip[pl_remote_addr] = clients_ip.get(pl_remote_addr, {
+                    "total_count": 0,
+                    "responded": 0,
+                    "total_request_time": 0,
+                    "responded_request_time": 0,
+                    "upstream_time": 0
+                })
+                clients_ip[pl_remote_addr]["total_count"] += 1
+                clients_ip[pl_remote_addr]["responded"] += pl_responded
+                clients_ip[pl_remote_addr]["total_request_time"] += pl_request_time
+                clients_ip[pl_remote_addr]["responded_request_time"] += pl_responded_request_time
+                clients_ip[pl_remote_addr]["upstream_time"] += pl_upstream_time
 
-                # By status
-                if status in summary['by_status'].keys():
-                    summary['by_status'][status] += 1
-                else:
-                    summary['by_status'][status] = 1
+            if grep:
+                gu.send(parsed_line)
 
-                # Creation the total timing and the count report
-                if time or count:
-                    if request in time_total.keys():
-                        time_total[request] += upstream_response_time
-                    else:
-                        time_total[request] = upstream_response_time
-                    if request in count_total.keys():
-                        count_total[request] += 1
-                    else:
-                        count_total[request] = 1
-
-                # Creation the report, based on the request status
-                if status_rep:
-                    for s in status_rep:
-                        if str(s) == status:
-                            if request in status_rep_count_dict[s].keys():
-                                status_rep_count_dict[s][request] += 1
-                            else:
-                                status_rep_count_dict[s][request] = 1
-                            if request in status_rep_time_dict[s].keys():
-                                status_rep_time_dict[s][request] += upstream_response_time
-                            else:
-                                status_rep_time_dict[s][request] = upstream_response_time
-                            no_tz_local_time = time_local[:-9]
-                            req_dt = datetime.strptime(no_tz_local_time, "%d/%b/%Y:%H:%M")
-                            if req_dt in status_rep_timeline_dict.keys():
-                                if s in status_rep_timeline_dict[req_dt].keys():
-                                    status_rep_timeline_dict[req_dt][s] += 1
-                                else:
-                                    status_rep_timeline_dict[req_dt][s] = 1
-                            else:
-                                status_rep_timeline_dict[req_dt] = {}
-                                status_rep_timeline_dict[req_dt][s] = 1
-
-                # Creation the report based on a median duration of calls
-                if median:
-                    if request in median_urls.keys():
-                        median_urls[request].append(upstream_response_time)
-                    else:
-                        median_urls[request] = []
-                        median_urls[request].append(upstream_response_time)
-
-                # Creation the report based on the number of calls from remote hosts
-                if remote or difference:
-                    if remote_addr in remote_host_report.keys():
-                        remote_host_report[remote_addr] += 1
-                    else:
-                        remote_host_report[remote_addr] = 1
-
-                #Creation the report is based on the difference between $request_time and $upstream_response_time
-                if difference:
-                    if request_time - upstream_response_time > difference:
-                        if remote_addr in difference_report.keys():
-                            difference_report[remote_addr] += 1
-                        else:
-                            difference_report[remote_addr] = 1
-
-            elif debug:
-                debug_rows.append(log_line_nu)
-        except:
+        except AttributeError:
             if debug:
-                debug_rows.append(log_line_nu)
+                print('Line {} not parsed: {} '.format(total_count, line))
 
-    # Redirect out to the file
-    if outfile:
-        print('\nReports are stored in this file: {}'.format(outfile))
-        sys.stdout = open(outfile, 'w')
+        if total_count % 1000 == 0 and not grep:
+            progress_bar(lines_count, total_count, parsed_count)
 
-    # Sort the summary dicts
-    sorted_summary_by_types = sorted(summary['by_types'].items(), key=itemgetter(1), reverse=True)
-    sorted_summary_by_time = sorted(summary['by_time'].items(), key=itemgetter(1), reverse=True)
-    sorted_summary_by_status = sorted(summary['by_status'].items(), key=itemgetter(1), reverse=True)
+    if grep:
+        gu.close()
 
-    # Print the summary
-    print("\n= Summary {}".format("=" * 97))
-    summary_by_types = '| Request types\t\t: '
-    for k in sorted_summary_by_types:
-        summary_by_types += "{}: {} ".format(k[0], k[1])
-    print(summary_by_types)
-    summary_by_time = '| Request timing\t: '
-    for k in sorted_summary_by_time:
-        summary_by_time += "{}: {} ".format(k[0], round(k[1], 2))
-    print(summary_by_time)
-    summary_by_status = '| Request statuses\t: '
-    for k in sorted_summary_by_status:
-        summary_by_status += "{}: {} ".format(k[0], k[1])
-    print(summary_by_status)
+    return {
+        "total_count": total_count,
+        "parsed_count": parsed_count,
+        "methods": methods,
+        "timeline": timeline,
+        "clients": clients_ip
+    }
 
-    # Sort and print the total timing report
-    if time:
-        sorted_time_total = sorted(time_total.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report, based on the total call time {}".format("=" * 64))
-        print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
-              format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
-        printed_lines = 0
-        for e in sorted_time_total:
-            printed_lines += 1
-            if printed_lines > limit:
-                break
-            print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
-                  format(count_total[e[0]], round(e[1], 2), round(e[1] / count_total[e[0]], 2), e[0]))
 
-    # Sort and print the count report
-    if count:
-        sorted_count_total = sorted(count_total.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report, based on the total number of queries {}".format("=" * 56))
-        print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
-              format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
-        printed_lines = 0
-        for e in sorted_count_total:
-            printed_lines += 1
-            if printed_lines > limit:
-                break
-            print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
-                  format(e[1], round(time_total[e[0]], 2), round(time_total[e[0]] / e[1], 2), e[0]))
+def dump_data_to_json(data, json_file):
+    with open(json_file, 'w') as jf:
+        json.dump(data, jf)
+        print("dump exported")
 
-    # Sort and print the median report
-    if median:
-        median_report = {}
-        for request in median_urls.keys():
-            median_urls[request].sort()
-            if len(median_urls[request]) % 2 == 1:
-                median_report[request] = round(median_urls[request][int(len(median_urls[request]) / 2)], 3)
-            else:
-                median_report[request] = round((median_urls[request][int(len(median_urls[request]) / 2) - 1] +
-                                          median_urls[request][int(len(median_urls[request]) / 2)]) / 2, 3)
-        sorted_median_report = sorted(median_report.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report based on a median duration of calls {}".format("=" * 58))
-        print("| {0:>25} | {1:>17} | {2:<}".format("Median duration of call", "Calls", "URL_pattern"))
-        printed_lines = 0
-        for e in sorted_median_report:
-            printed_lines += 1
-            if printed_lines > limit:
-                break
-            print("| {0:>25} | {1:>17} | {2:<}".format(e[1], len(median_urls[e[0]]), e[0]))
 
-    # Sort and print the reports, based on the request status
-    if status_rep:
-        for s in status_rep:
-            sorted_status_rep = sorted(status_rep_count_dict[s].items(), key=itemgetter(1), reverse=True)
-            print("\n= The report, based on the request status = {} {}".format(s, "=" * 59))
-            print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
-                  format("Calls", "Total time (sec)", "Resp. rate (s/c)", "URL pattern"))
-            printed_lines = 0
-            for e in sorted_status_rep:
-                printed_lines += 1
-                if printed_lines > limit:
-                    break
-                print("| {0:>17} | {1:>20} | {2:>17} | {3:<}".
-                      format(e[1], round(status_rep_time_dict[s][e[0]], 2),
-                             round(status_rep_time_dict[s][e[0]] / e[1], 2), e[0]))
-        print("\n= The number of requests with the specified status in a minute {}".format("=" * 44))
-        report_start = min(status_rep_timeline_dict.keys())
-        report_stop = max(status_rep_timeline_dict.keys())
-        all_minutes = list()
-        all_minutes.append(report_start)
-        current_minute = report_start
-        while current_minute < report_stop:
-            current_minute += timedelta(minutes=1)
-            all_minutes.append(current_minute)
-        line = 'DateTime'
-        for s in status_rep:
-            line += '\t\t' + str(s)
-        print(line)
-        for m in all_minutes:
-            line = m.strftime('%d %b %H:%M')
-            if m in status_rep_timeline_dict.keys():
-                for s in status_rep:
-                    if s in status_rep_timeline_dict[m].keys():
-                        line += '\t\t' + str(status_rep_timeline_dict[m][s])
-                    else:
-                        line += '\t\t0'
-            else:
-                line += '\t\t0' * len(status_rep)
-            print(line)
+def get_minute(min_dt, max_dt):
+    current = min_dt
+    while current <= max_dt:
+        yield current
+        current += timedelta(minutes=1)
 
-    # Sort and and print the report based on the number of calls from remote hosts
-    if remote:
-        sorted_remote_host_report = sorted(remote_host_report.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report based on the number of calls from remote hosts {}".format("=" * 47))
-        print("| {0:>17} | {1:<}".format("Calls", "Remote host"))
-        printed_lines = 0
-        for e in sorted_remote_host_report:
-            printed_lines += 1
-            if printed_lines > limit:
-                break
-            print("| {0:>17} | {1:<}".format(e[1], e[0]))
 
-    # Sort and print the report is based on the difference between $request_time and $upstream_response_time
-    if difference:
-        slow_percent = {}
-        for e in difference_report.keys():
-            slow_percent[e] = round(difference_report[e] / remote_host_report[e] * 100, 2)
-        sorted_slow_percent = sorted(slow_percent.items(), key=itemgetter(1), reverse=True)
-        print("\n= The report is based on the difference between $request_time and $upstream_response_time {}".
-              format("=" * 17))
-        print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format("All calls", "Slow calls", "Percent of slow calls",
-                                                             "Remote host"))
-        printed_lines = 0
-        for e in sorted_slow_percent:
-            printed_lines += 1
-            if printed_lines > limit:
-                break
-            print("| {0:>17} | {1:>17} | {2:>21} | {3:<}".format(remote_host_report[e[0]], difference_report[e[0]],
-                                                                 e[1], e[0]))
+def print_header(header):
+    k = 72
+    print("\n{0} {1} {0}".format((k - len(header) // 2) * "=", header))
 
-    # Displays the count of unparsed lines and the unparsed line numbers
-    if debug:
-        print("\nUnparsed rows number: {}".format(len(debug_rows)))
-        if len(debug_rows):
-            print("= Unparsed line numbers {}".format("=" * 83))
-            print('\t'.join(str(e) for e in debug_rows))
+
+def print_report(data):
+    print("\n\nParsed {} from {} lines".format(data["parsed_count"], data["total_count"]))
+
+    if data["methods"]:
+        for method in data["methods"].keys():
+            print_header(method)
+            print("{:>10}\t{:>5}\t{:>5}\t{:>5}\t{:>5}\t{:<60}\t{:<}".format(
+                "Count",
+                "Resp(%)",
+                "AvgRT",
+                "AvgUT",
+                "AvgB",
+                "Uri",
+                "StatusCount"
+            ))
+            m_count = 0
+            m_responded = 0
+            m_request_time = 0
+            m_upstream_time = 0
+            m_bytes_sent = 0
+            m_status = {}
+            for uri in data["methods"][method].keys():
+                count = data["methods"][method][uri]["count"]
+                responded = data["methods"][method][uri]["responded"]
+                request_time = data["methods"][method][uri]["request_time"]
+                upstream_time = data["methods"][method][uri]["upstream_time"]
+                bytes_sent = data["methods"][method][uri]["bytes_sent"]
+                m_count += count
+                m_responded += responded
+                m_request_time += request_time
+                m_upstream_time += upstream_time
+                m_bytes_sent += bytes_sent
+                status_line = "["
+                for status in data["methods"][method][uri]["status"].keys():
+                    s_count = data["methods"][method][uri]["status"][status]
+                    m_status[status] = m_status.get(status, 0) + s_count
+                    status_line += "{}:{}, ".format(status, s_count)
+                try:
+                    avg_upstream_time = upstream_time / responded
+                except ZeroDivisionError:
+                    avg_upstream_time = 0
+                line = "{:>10}\t{:>5.1f}\t{:>5.2f}\t{:>5.2f}\t{:>5.0f}\t{:<60}\t{:<}".format(
+                    count,
+                    responded * 100 / count,
+                    request_time / count,
+                    avg_upstream_time,
+                    bytes_sent / count,
+                    uri,
+                    status_line[:-2] + "]"
+                )
+                print(line)
+            try:
+                m_avg_upstream_time = m_upstream_time / m_responded
+            except ZeroDivisionError:
+                m_avg_upstream_time = 0
+            m_status_line = "["
+            for status in m_status.keys():
+                m_status_line += "{}:{}, ".format(status, m_status[status])
+            overall = "{:>10}\t{:>5.1f}\t{:>5.2f}\t{:>5.2f}\t{:>5.0f}\t{:<60}\t{:<}".format(
+                m_count,
+                m_responded * 100 / m_count,
+                m_request_time / m_count,
+                m_avg_upstream_time,
+                m_bytes_sent / m_count,
+                "%Overall",
+                m_status_line[:-2] + "]"
+            )
+            print(overall)
+
+    if data["timeline"]:
+        status_list = set()
+        for dt_str in list(data["timeline"].keys()):
+            for status in data["timeline"][dt_str].keys():
+                status_list.add(status)
+            dt = datetime.strptime(dt_str, '%d/%b/%Y:%H:%M')
+            data["timeline"][dt] = data["timeline"][dt_str]
+            del data["timeline"][dt_str]
+        min_dt = min(data["timeline"].keys())
+        max_dt = max(data["timeline"].keys())
+        header = "Report period: {} - {}".format(min_dt, max_dt)
+        print_header(header)
+        minutes = get_minute(min_dt, max_dt)
+        sorted_status_list = sorted(status_list)
+        th = "{:<20}".format("DateTime")
+        for status in sorted_status_list:
+            th += '\t{:>5}'.format(status)
+        print(th)
+        for minute in minutes:
+            tr = "{:<20}".format(datetime.strftime(minute, '%d/%b/%Y:%H:%M'))
+            for status in sorted_status_list:
+                try:
+                    tr += '\t{:>5}'.format(str(data["timeline"][minute][status]))
+                except KeyError:
+                    tr += '\t{:>5}'.format('0')
+            print(tr)
+
+    if data["clients"]:
+        header = "Number of ip: {}".format(str(len(data["clients"].keys())))
+        print_header(header)
+        print("{:<15}\t{:>10}\t{:>10}\t{:>10}\t{:>10}\t{:>10}".format(
+            "IP address",
+            "Count",
+            "GetResp(%)",
+            "AvgRT",
+            "RespAvgRT",
+            "AvgDelay"
+        ))
+        for client_ip in data["clients"].keys():
+            total_count = data["clients"][client_ip]["total_count"]
+            responded = data["clients"][client_ip]["responded"]
+            total_request_time = data["clients"][client_ip]["total_request_time"]
+            responded_request_time = data["clients"][client_ip]["responded_request_time"]
+            upstream_time = data["clients"][client_ip]["upstream_time"]
+            print("{:<15}\t{:>10}\t{:>10.1f}\t{:>10.2f}\t{:>10.2f}\t{:>10.3f}".format(
+                client_ip,
+                total_count,
+                responded * 100 / total_count,
+                total_request_time / total_count,
+                responded_request_time / responded,
+                (responded_request_time - upstream_time) / responded
+            ))
 
 
 def main():
-    parser = ArgumentParser(
+    arguments = ArgumentParser(
         description='using log format: \'$remote_addr - [$time_local] "$host" "$request" '
                     '$status ($bytes_sent) "$http_referer" '
                     '"$uri $args" [$request_time] [$upstream_response_time]\'',
         epilog='version = {}'.format(__version__)
     )
-    parser.add_argument('--logfile', '-l', action='store',
-                        help='Log file for analysis', required=True)
-    parser.add_argument('--outfile', '-o', action='store',
-                        help='File to save the output reports')
-    parser.add_argument('--period', '-p', action='store', nargs=2,
-                        help='Specify the period for which you need to make reports. '
-                             'Using format: Y.m.d_H:M:S. '
-                             'Example: --period 2015.10.19_00:00:00 2015.10.20_00:00:00')
-    parser.add_argument('--exclude', '-e', action='store', nargs='*',
-                        help='The part of URL that are excluded from reporting')
-    parser.add_argument('--time', '-t', action='count',
-                        help='Print the report based on the total call time')
-    parser.add_argument('--count', '-c', action='count',
-                        help='Print the report based on the total number of queries')
-    parser.add_argument('--median', '-m', action='count',
-                        help='Print the report based on a median duration of calls')
-    parser.add_argument('--status', '-s', action='store', nargs='*', type=int,
-                        help='Print the report based on the request status')
-    parser.add_argument('--remote', '-r', action='count',
-                        help='Print the report based on the number of calls from remote hosts')
-    parser.add_argument('--difference', '-d', action='store', type=float,
-                        help='Print the report is based on the difference between $request_time and '
-                             '$upstream_response_time. It specifies the minimum difference, in seconds, '
-                             'for the registration of the request. Example -d 0.5')
-    parser.add_argument('--limit', '-L', action='store', default=100, type=int,
-                        help='Limit the output reports. Default 100.')
-    parser.add_argument('--debug', '-D', action='count',
-                        help='Displays the count of unparsed lines and the unparsed line numbers')
-    args = parser.parse_args()
-    if path.isfile(args.logfile):
-        analyze_log(args.logfile, args.outfile, args.time, args.count,
-                    args.exclude, args.status, args.debug, args.median,
-                    args.remote, args.period, args.limit, args.difference)
-    else:
-        print("This is not a file: {}".format(args.logfile))
+    arguments.add_argument("log_file", help="NGINX log file, with defined format")
+    arguments.add_argument("--uri", "-u", action="count", help="Get uri-based report")
+    arguments.add_argument("--time", "-t", action="count", help="Get time-based report")
+    arguments.add_argument("--clients", "-c", action="count", help="Get client-based report")
+    arguments.add_argument("--grep", "-g", action="store", type=float,
+                           help="Grep lines, where 'upstream_time' more than the specified")
+    arguments.add_argument("--dump", "-d", action="store", help="Export parsed data to the json.file")
+    arguments.add_argument("--no_report", "-N", action="count", help="Don't print the report")
+    arguments.add_argument("--debug", "-D", action="count", help="Print not parsed lines")
+    args = arguments.parse_args()
+
+    if not any([args.uri, args.time, args.clients, args.grep]):
+        print("You didn't choised a parsing parameters")
+        exit()
+
+    data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
+    if not args.no_report:
+        print_report(data)
+
+    if args.dump:
+        dump_data_to_json(data, args.dump)
 
 
 if __name__ == "__main__":
