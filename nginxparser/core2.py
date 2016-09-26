@@ -5,7 +5,7 @@ import re
 import json
 import sys
 from argparse import ArgumentParser
-from datetime import datetime
+from datetime import datetime, timedelta
 from patterns import log_format
 
 
@@ -157,12 +157,20 @@ def dump_data_to_json(data, json_file):
         print("dump exported")
 
 
+def get_minute(min_dt, max_dt):
+    current = min_dt
+    while current <= max_dt:
+        yield current
+        current += timedelta(minutes=1)
+
+
 def print_report(data):
     print("\n\nParsed {} from {} lines".format(data["parsed_count"], data["total_count"]))
+    k = 72
 
     if data["methods"]:
         for method in data["methods"].keys():
-            print("\n{0} {1} {0}".format((78 - len(method) // 2) * "=", method))
+            print("\n{0} {1} {0}".format((k - len(method) // 2) * "=", method))
             print("{:>10}\t{:>5}\t{:>5}\t{:>5}\t{:>5}\t{:<60}\t{:<}".format(
                 "Count",
                 "Resp(%)",
@@ -225,6 +233,33 @@ def print_report(data):
                 m_status_line[:-2] + "]"
             )
             print(overall)
+
+    if data["timeline"]:
+        status_list = set()
+        for dt_str in list(data["timeline"].keys()):
+            for status in data["timeline"][dt_str].keys():
+                status_list.add(status)
+            dt = datetime.strptime(dt_str, '%d/%b/%Y:%H:%M')
+            data["timeline"][dt] = data["timeline"][dt_str]
+            del data["timeline"][dt_str]
+        min_dt = min(data["timeline"].keys())
+        max_dt = max(data["timeline"].keys())
+        header = "Report period: {} - {}".format(min_dt, max_dt)
+        print("\n{0} {1} {0}".format((k - len(header) // 2) * "=", header))
+        minutes = get_minute(min_dt, max_dt)
+        sorted_status_list = sorted(status_list)
+        th = "{:<20}".format("DateTime")
+        for status in sorted_status_list:
+            th += '\t{:>5}'.format(status)
+        print(th)
+        for minute in minutes:
+            tr = "{:<20}".format(datetime.strftime(minute, '%d/%b/%Y:%H:%M'))
+            for status in sorted_status_list:
+                try:
+                    tr += '\t{:>5}'.format(str(data["timeline"][minute][status]))
+                except KeyError:
+                    tr += '\t{:>5}'.format('0')
+            print(tr)
 
 
 def main():
