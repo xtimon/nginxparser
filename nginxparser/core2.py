@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 import re
 import json
 import sys
@@ -15,82 +16,6 @@ def read_file_line(file_name):
             if not line:
                 break
             yield line
-
-
-def count_methods():
-    methods = {}
-    while True:
-        d = (yield)
-        if d:
-            method = d['method']
-            uri = re.sub('\d+', '%d', d['uri'])
-            bytes = int(d['bytes_sent'])
-            request_time = float(d['request_time'])
-            status = d['status']
-            try:
-                upstream_time = float(d['upstream_time'])
-                responded = 1
-            except ValueError:
-                upstream_time = 0
-                responded = 0
-            methods[method] = methods.get(method, {})
-            methods[method][uri] = methods[method].get(uri, {
-                "count": 0,
-                "responded": 0,
-                "bytes_sent": 0,
-                "request_time": 0,
-                "upstream_time": 0,
-                "status": {}
-            })
-            methods[method][uri]["status"][status] = methods[method][uri]["status"].get(status, 0) + 1
-            methods[method][uri]["count"] += 1
-            methods[method][uri]["responded"] += responded
-            methods[method][uri]["bytes_sent"] += bytes
-            methods[method][uri]["request_time"] += request_time
-            methods[method][uri]["upstream_time"] += upstream_time
-        yield methods
-
-
-def count_timeline():
-    timeline = {}
-    while True:
-        d = (yield)
-        if d:
-            timestamp = d['local_time'][:-9]
-            status = d['status']
-            timeline[timestamp] = timeline.get(timestamp, {})
-            timeline[timestamp][status] = timeline[timestamp].get(status, 0) + 1
-        yield timeline
-
-
-def count_clients():
-    clients = {}
-    while True:
-        d = (yield)
-        if d:
-            remote_addr = d['remote_addr']
-            request_time = float(d['request_time'])
-            try:
-                upstream_time = float(d['upstream_time'])
-                responded = 1
-                responded_request_time = request_time
-            except ValueError:
-                upstream_time = 0
-                responded = 0
-                responded_request_time = 0
-            clients[remote_addr] = clients.get(remote_addr, {
-                "total_count": 0,
-                "responded": 0,
-                "total_request_time": 0,
-                "responded_request_time": 0,
-                "upstream_time": 0
-            })
-            clients[remote_addr]["total_count"] += 1
-            clients[remote_addr]["responded"] += responded
-            clients[remote_addr]["total_request_time"] += request_time
-            clients[remote_addr]["responded_request_time"] += responded_request_time
-            clients[remote_addr]["upstream_time"] += upstream_time
-        yield clients
 
 
 def grep_upstream(value):
@@ -139,18 +64,6 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, grep=Fals
     timeline={}
     clients_ip={}
 
-    if uri:
-        cm = count_methods()
-        next(cm)
-
-    if time:
-        ct = count_timeline()
-        next(ct)
-
-    if clients:
-        cc = count_clients()
-        next(cc)
-
     if grep:
         gu = grep_upstream(grep)
         next(gu)
@@ -162,14 +75,59 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, grep=Fals
             parsed_line = m.groupdict()
             parsed_count += 1
 
+            pl_method = parsed_line['method']
+            pl_uri = re.sub('\d+', '%d', parsed_line['uri'])
+            pl_bytes = int(parsed_line['bytes_sent'])
+            pl_request_time = float(parsed_line['request_time'])
+            pl_status = parsed_line['status']
+            pl_timestamp = parsed_line['local_time'][:-9]
+            pl_remote_addr = parsed_line['remote_addr']
+            try:
+                pl_upstream_time = float(parsed_line['upstream_time'])
+                pl_responded = 1
+                pl_responded_request_time = pl_request_time
+            except ValueError:
+                pl_upstream_time = 0
+                pl_responded = 0
+                pl_responded_request_time = 0
+
+            # Count methods
             if uri:
-                cm.send(parsed_line)
+                methods[pl_method] = methods.get(pl_method, {})
+                methods[pl_method][pl_uri] = methods[pl_method].get(pl_uri, {
+                    "count": 0,
+                    "responded": 0,
+                    "bytes_sent": 0,
+                    "request_time": 0,
+                    "upstream_time": 0,
+                    "status": {}
+                })
+                methods[pl_method][pl_uri]["status"][pl_status] = methods[pl_method][pl_uri]["status"].get(pl_status, 0) + 1
+                methods[pl_method][pl_uri]["count"] += 1
+                methods[pl_method][pl_uri]["responded"] += pl_responded
+                methods[pl_method][pl_uri]["bytes_sent"] += pl_bytes
+                methods[pl_method][pl_uri]["request_time"] += pl_request_time
+                methods[pl_method][pl_uri]["upstream_time"] += pl_upstream_time
 
+            # Count timeline
             if time:
-                ct.send(parsed_line)
+                timeline[pl_timestamp] = timeline.get(pl_timestamp, {})
+                timeline[pl_timestamp][pl_status] = timeline[pl_timestamp].get(pl_status, 0) + 1
 
+            # Count clients
             if clients:
-                cc.send(parsed_line)
+                clients_ip[pl_remote_addr] = clients_ip.get(pl_remote_addr, {
+                    "total_count": 0,
+                    "responded": 0,
+                    "total_request_time": 0,
+                    "responded_request_time": 0,
+                    "upstream_time": 0
+                })
+                clients_ip[pl_remote_addr]["total_count"] += 1
+                clients_ip[pl_remote_addr]["responded"] += pl_responded
+                clients_ip[pl_remote_addr]["total_request_time"] += pl_request_time
+                clients_ip[pl_remote_addr]["responded_request_time"] += pl_responded_request_time
+                clients_ip[pl_remote_addr]["upstream_time"] += pl_upstream_time
 
             if grep:
                 gu.send(parsed_line)
@@ -180,18 +138,6 @@ def parse(log_file, debug=False, uri=False, time=False, clients=False, grep=Fals
 
         if total_count % 1000 == 0 and not grep:
             progress_bar(lines_count, total_count, parsed_count)
-
-    if uri:
-        methods = cm.send(None)
-        cm.close()
-
-    if time:
-        timeline = ct.send(None)
-        ct.close()
-
-    if clients:
-        clients_ip = cc.send(None)
-        cc.close()
 
     if grep:
         gu.close()
@@ -217,7 +163,7 @@ def print_report(data):
     if data["methods"]:
         for method in data["methods"].keys():
             print("\n{0} {1} {0}".format((78 - len(method) // 2) * "=", method))
-            print("{:>10}\t{:>10}\t{:>10}\t{:>5}\t{:>10}\t{:>5}\t{:>12}\t{:>5}\t{:<30}\t{:<}".format(
+            print("{:>10}\t{:>10}\t{:>10}\t{:>5}\t{:>10}\t{:>5}\t{:>12}\t{:>5}\t{:<40}\t{:<}".format(
                 "Count",
                 "Responded",
                 "ReqTime",
@@ -255,7 +201,7 @@ def print_report(data):
                     avg_upstream_time = upstream_time / responded
                 except ZeroDivisionError:
                     avg_upstream_time = 0
-                line = "{:>10}\t{:>10}\t{:>10.2f}\t{:>5.2f}\t{:>10.2f}\t{:>5.2f}\t{:>12}\t{:>5.0f}\t{:<30}\t{:<}".format(
+                line = "{:>10}\t{:>10}\t{:>10.2f}\t{:>5.2f}\t{:>10.2f}\t{:>5.2f}\t{:>12}\t{:>5.0f}\t{:<40}\t{:<}".format(
                     count,
                     responded,
                     request_time,
