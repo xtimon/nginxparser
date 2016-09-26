@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 PACKAGE = "nginxparser"
 NAME = "nginxparser"
-DESCRIPTION = "Nginx log parser"
+DESCRIPTION = "Nginx log parser and analyzer"
 AUTHOR = "Timur Isanov"
 AUTHOR_EMAIL = "tisanov@yahoo.com"
 URL = "https://github.com/xtimon/nginxparser"
@@ -15,7 +15,7 @@ setup(
     long_description=open("README.rst").read(),
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
-    license="GPL",
+    license="MIT",
     url=URL,
     packages=find_packages(),
     classifiers=[
