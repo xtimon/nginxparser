@@ -316,11 +316,12 @@ def main():
         exit()
 
     data = parse(args.log_file, args.debug, args.uri, args.time, args.clients, args.grep)
-    if not args.no_report:
-        print_report(data)
 
     if args.dump:
         dump_data_to_json(data, args.dump)
+
+    if not args.no_report:
+        print_report(data)
 
 
 if __name__ == "__main__":
