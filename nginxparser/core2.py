@@ -163,14 +163,11 @@ def print_report(data):
     if data["methods"]:
         for method in data["methods"].keys():
             print("\n{0} {1} {0}".format((78 - len(method) // 2) * "=", method))
-            print("{:>10}\t{:>10}\t{:>10}\t{:>5}\t{:>10}\t{:>5}\t{:>12}\t{:>5}\t{:<40}\t{:<}".format(
+            print("{:>10}\t{:>5}\t{:>5}\t{:>5}\t{:>5}\t{:<60}\t{:<}".format(
                 "Count",
-                "Responded",
-                "ReqTime",
+                "Resp(%)",
                 "AvgRT",
-                "UpstTime",
                 "AvgUT",
-                "Bytes",
                 "AvgB",
                 "Uri",
                 "StatusCount"
@@ -201,19 +198,33 @@ def print_report(data):
                     avg_upstream_time = upstream_time / responded
                 except ZeroDivisionError:
                     avg_upstream_time = 0
-                line = "{:>10}\t{:>10}\t{:>10.2f}\t{:>5.2f}\t{:>10.2f}\t{:>5.2f}\t{:>12}\t{:>5.0f}\t{:<40}\t{:<}".format(
+                line = "{:>10}\t{:>5.1f}\t{:>5.2f}\t{:>5.2f}\t{:>5.0f}\t{:<60}\t{:<}".format(
                     count,
-                    responded,
-                    request_time,
+                    responded * 100 / count,
                     request_time / count,
-                    upstream_time,
                     avg_upstream_time,
-                    bytes_sent,
                     bytes_sent / count,
                     uri,
                     status_line[:-2] + "]"
                 )
                 print(line)
+            try:
+                m_avg_upstream_time = m_upstream_time / m_responded
+            except ZeroDivisionError:
+                m_avg_upstream_time = 0
+            m_status_line = "["
+            for status in m_status.keys():
+                m_status_line += "{}:{}, ".format(status, m_status[status])
+            overall = "{:>10}\t{:>5.1f}\t{:>5.2f}\t{:>5.2f}\t{:>5.0f}\t{:<60}\t{:<}".format(
+                m_count,
+                m_responded * 100 / m_count,
+                m_request_time / m_count,
+                m_avg_upstream_time,
+                m_bytes_sent / m_count,
+                "%Overall",
+                m_status_line[:-2] + "]"
+            )
+            print(overall)
 
 
 def main():
